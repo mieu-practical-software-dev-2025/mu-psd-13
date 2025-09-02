@@ -28,7 +28,7 @@
 | 分類         | 技術・ライブラリ |
 |--------------|------------------|
 | フロントエンド | Vue.js / HTML5 + CSS3 |
-| バックエンド  | pygmaps/Python 3.x, Flask |
+| バックエンド  | Pillow (PIL),Pygmaps/Python 3.x, Flask |
 | 通信方式     | Fetch API / JSON |
 | LLMモデル    | OpenRouter API（OpenAI, Anthropic, Mistral等） |
 | 画像関連  | Google Custom Search API |
