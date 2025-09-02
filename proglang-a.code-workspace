@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "\\\\wsl.localhost\\Ubuntu-2004\\home\\wsl\\proglang-a"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"stdio.h": "c"
+		}
+	}
+}
