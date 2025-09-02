@@ -28,9 +28,13 @@
 | 分類         | 技術・ライブラリ |
 |--------------|------------------|
 | フロントエンド | Vue.js / HTML5 + CSS3 |
-| バックエンド  | Flask |
+| バックエンド  | Python 3.x, Flask |
 | 通信方式     | Fetch API / JSON |
 | LLMモデル    | OpenRouter API（OpenAI, Anthropic, Mistral等） |
+| 画像関連  | Google Custom Search API |
+| 地図・ルート | Google Maps API |
+| ホテル情報 | 楽天トラベル API |
+
 
 ## 4. 入出力例
 
