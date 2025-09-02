@@ -1,5 +1,7 @@
 import os
 from flask import Flask, request, jsonify, send_from_directory
+import json
+import requests # ホテルAPI連携で利用
 from openai import OpenAI # Import the OpenAI library
 from dotenv import load_dotenv
 
@@ -64,39 +66,92 @@ def send_api():
         app.logger.error("Received text is empty or whitespace.")
         return jsonify({"error": "Input text cannot be empty"}), 400
     
-    # contextがあればsystemプロンプトに設定、なければデフォルト値
-    system_prompt = "140字以内で回答してください。" # デフォルトのシステムプロンプト
-    if 'context' in data and data['context'] and data['context'].strip():
-        system_prompt = data['context'].strip()
-        app.logger.info(f"Using custom system prompt from context: {system_prompt}")
-    else:
-        app.logger.info(f"Using default system prompt: {system_prompt}")
+    location_name = received_text.strip()
+
+    # LLMに観光情報を要求するための詳細なシステムプロンプトを生成します。
+    # このプロンプトは、AIに対してJSON形式で構造化されたデータを返すように指示しています。
+    # これにより、フロントエンドで情報を扱いやすくなります。
+    system_prompt = f"""
+あなたは日本の旅行プランナーです。これから指定される日本の地名について、以下の情報をJSON形式で回答してください。
+
+JSONのキーは `tourist_spots`, `local_food`, `model_route` としてください。
+
+- `tourist_spots`: おすすめの観光地を3つ、`name` (名称)と `description` (簡単な説明) を含むオブジェクトのリストで挙げてください。
+- `local_food`: 有名な食べ物や名物料理を3つ、`name` (名称)と `description` (簡単な説明) を含むオブジェクトのリストで挙げてください。
+- `model_route`: 1日で楽しめるモデル観光ルートを、`morning`, `lunch`, `afternoon`, `dinner` のキーを持つオブジェクトで提案してください。
+"""
 
     try:
         # OpenRouter APIを呼び出し
-        # モデル名はOpenRouterで利用可能なモデルを指定してください。
-        # 例: "mistralai/mistral-7b-instruct", "google/gemini-pro", "openai/gpt-3.5-turbo"
-        # 詳細はOpenRouterのドキュメントを参照してください。
+        # このような複雑な指示には、より高性能なモデル(例: google/gemini-1.5-pro-latest)を推奨します。
+        # また、response_format={"type": "json_object"} を指定することで、AIにJSON形式での出力を強制できます。
+        # (この機能は比較的新しいバージョンのOpenAIライブラリでサポートされています)
         chat_completion = client.chat.completions.create(
-            messages=[ # type: ignore
+            model="google/gemini-1.5-pro-latest", # より高性能なモデルを推奨
+            response_format={"type": "json_object"}, # JSONモードを有効化
+            messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": received_text}
-            ], # type: ignore
-            model="google/gemma-3-27b-it:free", 
+                {"role": "user", "content": location_name}
+            ],
         )
         
-        # APIからのレスポンスを取得
-        if chat_completion.choices and chat_completion.choices[0].message:
-            processed_text = chat_completion.choices[0].message.content
+        # APIからのレスポンス(JSON文字列)を取得
+        if chat_completion.choices and chat_completion.choices[0].message.content:
+            try:
+                # LLMからの応答はJSON文字列なので、Pythonの辞書にパースします
+                processed_data = json.loads(chat_completion.choices[0].message.content)
+                return jsonify({"message": "AIによってデータが処理されました。", "processed_data": processed_data})
+            except json.JSONDecodeError:
+                app.logger.error(f"Failed to parse JSON response from AI: {chat_completion.choices[0].message.content}")
+                return jsonify({"error": "AIからの応答を解析できませんでした。"}), 500
         else:
-            processed_text = "AIから有効な応答がありませんでした。"
-            
-        return jsonify({"message": "AIによってデータが処理されました。", "processed_text": processed_text})
+            app.logger.error("AI response was empty.")
+            return jsonify({"error": "AIから有効な応答がありませんでした。"}), 500
 
     except Exception as e:
         app.logger.error(f"OpenRouter API call failed: {e}")
         # クライアントには具体的なエラー詳細を返しすぎないように注意
         return jsonify({"error": f"AIサービスとの通信中にエラーが発生しました。"}), 500
+
+# ホテル検索用のAPIエンドポイント (概念的な実装例)
+@app.route('/api/hotels', methods=['GET'])
+def search_hotels():
+    location = request.args.get('location')
+    if not location:
+        return jsonify({"error": "Location parameter is required"}), 400
+
+    # --- ここから下は、実際のホテル予約APIと連携するための実装例です ---
+    # 例: 楽天トラベルホテル検索APIなど (別途APIキーの取得が必要です)
+    # RAKUTEN_APP_ID = os.getenv("RAKUTEN_APP_ID")
+    # if not RAKUTEN_APP_ID:
+    #     return jsonify({"error": "Rakuten API key is not configured."}), 500
+    #
+    # # 実際のAPIリクエスト (これは楽天APIの例であり、仕様に合わせて変更が必要です)
+    # api_url = "https://app.rakuten.co.jp/services/api/Travel/SimpleHotelSearch/20170426"
+    # params = {
+    #     "format": "json",
+    #     "applicationId": RAKUTEN_APP_ID,
+    #     "keyword": location, # 地名でキーワード検索
+    #     "sort": "+hotelMinCharge" # 料金が安い順
+    # }
+    # try:
+    #     response = requests.get(api_url, params=params)
+    #     response.raise_for_status() # エラーがあれば例外を発生
+    #     hotels_data = response.json()
+    #     # ここでフロントエンドで使いやすいようにデータを整形します
+    #     return jsonify(hotels_data)
+    # except requests.exceptions.RequestException as e:
+    #     app.logger.error(f"Hotel API call failed: {e}")
+    #     return jsonify({"error": "ホテル情報の取得に失敗しました。"}), 500
+
+    # --- モックデータ(サンプル)を返す例 ---
+    # 実際のAPI連携を実装するまでの仮のデータです。
+    mock_hotels = [
+        {"name": f"{location}のホテルA", "price": 15000, "rating": 4.5, "url": "#"},
+        {"name": f"{location}の旅館B", "price": 30000, "rating": 4.8, "url": "#"},
+        {"name": f"{location}のビジネスホテルC", "price": 8000, "rating": 3.9, "url": "#"},
+    ]
+    return jsonify(sorted(mock_hotels, key=lambda h: h['price']))
 
 # スクリプトが直接実行された場合にのみ開発サーバーを起動
 if __name__ == '__main__':
