@@ -70,6 +70,7 @@
     //       "id": "a1",
     //       "name": "清水寺",
     //       "description": "世界遺産。舞台からの眺望で有名。",
+    //       "imageUrl": "https://example.com/images/kiyomizu.jpg",
     //       "address": "京都市東山区清水",
     //       "location": { "lat": 34.994856, "lng": 135.785046 },
     //       "nearestTransit": { "type": "bus", "name": "清水道バス停", "lines": ["市バス"], "distanceMeters": 450 }
@@ -78,6 +79,7 @@
     //       "id": "a2",
     //       "name": "伏見稲荷大社",
     //       "description": "千本鳥居で有名。",
+    //       "imageUrl": "https://example.com/images/fushimi.jpg",
     //       "address": "京都市伏見区深草藪之内町68",
     //       "location": { "lat": 34.96714, "lng": 135.77267 },
     //       "nearestTransit": { "type": "station", "name": "稲荷駅", "lines": ["JR奈良線"], "distanceMeters": 120 }
@@ -115,8 +117,8 @@
           place: "札幌",
           foods: ["ジンギスカン", "スープカレー", "札幌ラーメン"],
           attractions: [
-            { id: "s1", name: "大通公園", description: "都心の憩いの場。季節のイベント多数。", address: "札幌市中央区大通西", location: {lat:43.0601,lng:141.3565}, nearestTransit: {type:"station", name:"大通駅", lines:["南北線","東西線","東豊線"], distanceMeters: 180} },
-            { id: "s2", name: "藻岩山", description: "日本新三大夜景の一つ。", address: "札幌市南区藻岩山", location: {lat:43.0169,lng:141.3305}, nearestTransit: {type:"bus", name:"もいわ山ロープウェイ入口", lines:["市電⇔バス"], distanceMeters: 420} }
+            { id: "s1", name: "大通公園", description: "都心の憩いの場。季節のイベント多数。", imageUrl: "https://placehold.jp/400x250.png?text=大通公園", address: "札幌市中央区大通西", location: {lat:43.0601,lng:141.3565}, nearestTransit: {type:"station", name:"大通駅", lines:["南北線","東西線","東豊線"], distanceMeters: 180} },
+            { id: "s2", name: "藻岩山", description: "日本新三大夜景の一つ。", imageUrl: "https://placehold.jp/400x250.png?text=藻岩山", address: "札幌市南区藻岩山", location: {lat:43.0169,lng:141.3305}, nearestTransit: {type:"bus", name:"もいわ山ロープウェイ入口", lines:["市電⇔バス"], distanceMeters: 420} }
           ]
         };
       }
@@ -125,8 +127,8 @@
         place: "京都",
         foods: ["湯豆腐", "抹茶スイーツ", "にしんそば"],
         attractions: [
-          { id: "k1", name: "清水寺", description: "世界遺産。舞台からの眺望で有名。", address: "京都市東山区清水", location: {lat:34.994856,lng:135.785046}, nearestTransit: {type:"bus", name:"清水道バス停", lines:["市バス"], distanceMeters: 450} },
-          { id: "k2", name: "伏見稲荷大社", description: "千本鳥居で有名。", address: "京都市伏見区深草藪之内町68", location: {lat:34.96714,lng:135.77267}, nearestTransit: {type:"station", name:"稲荷駅", lines:["JR奈良線"], distanceMeters: 120} }
+          { id: "k1", name: "清水寺", description: "世界遺産。舞台からの眺望で有名。", imageUrl: "https://placehold.jp/400x250.png?text=清水寺", address: "京都市東山区清水", location: {lat:34.994856,lng:135.785046}, nearestTransit: {type:"bus", name:"清水道バス停", lines:["市バス"], distanceMeters: 450} },
+          { id: "k2", name: "伏見稲荷大社", description: "千本鳥居で有名。", imageUrl: "https://placehold.jp/400x250.png?text=伏見稲荷大社", address: "京都市伏見区深草藪之内町68", location: {lat:34.96714,lng:135.77267}, nearestTransit: {type:"station", name:"稲荷駅", lines:["JR奈良線"], distanceMeters: 120} }
         ]
       };
     }
@@ -176,31 +178,34 @@
       root.innerHTML = '';
       for (const a of attractions) {
         const card = document.createElement('article');
-        card.className = 'bg-white rounded-2xl shadow p-4';
+        card.className = 'bg-white rounded-2xl shadow overflow-hidden';
         const transit = a.nearestTransit;
         const transitIcon = transit?.type === 'station' ? '🚉' : '🚌';
         const lines = (transit?.lines || []).join(' / ');
         card.innerHTML = `
-          <div class="flex items-start gap-3">
-            <div class="text-2xl">📍</div>
-            <div class="flex-1">
-              <h4 class="text-lg font-semibold">${a.name}</h4>
-              <p class="text-sm text-slate-600">${a.description || ''}</p>
-              <p class="text-sm text-slate-600 mt-1">住所: ${a.address || '-'} </p>
-              <div class="mt-2 text-sm">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200">
-                  <span>${transitIcon} 最寄り${transit?.type === 'station' ? '駅' : 'バス停'}</span>
-                  <strong>${transit?.name || '-'}</strong>
-                  ${lines ? `<span class="text-slate-500">(${lines})</span>` : ''}
-                  ${transit?.distanceMeters ? `<span class="text-slate-500">・約 ${m2str(transit.distanceMeters)}</span>` : ''}
+          ${a.imageUrl ? `<img src="${a.imageUrl}" alt="${a.name}" class="w-full h-48 object-cover" loading="lazy">` : ''}
+          <div class="p-4">
+            <div class="flex items-start gap-3">
+              <div class="text-2xl">📍</div>
+              <div class="flex-1">
+                <h4 class="text-lg font-semibold">${a.name}</h4>
+                <p class="text-sm text-slate-600">${a.description || ''}</p>
+                <p class="text-sm text-slate-600 mt-1">住所: ${a.address || '-'} </p>
+                <div class="mt-2 text-sm">
+                  <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200">
+                    <span>${transitIcon} 最寄り${transit?.type === 'station' ? '駅' : 'バス停'}</span>
+                    <strong>${transit?.name || '-'}</strong>
+                    ${lines ? `<span class="text-slate-500">(${lines})</span>` : ''}
+                    ${transit?.distanceMeters ? `<span class="text-slate-500">・約 ${m2str(transit.distanceMeters)}</span>` : ''}
+                  </div>
                 </div>
+                <details class="mt-3 group">
+                  <summary class="cursor-pointer select-none text-sm text-slate-700">ホテルを表示（近い順）</summary>
+                  <div class="mt-3" id="hotels-${a.id}">
+                    <div class="text-sm text-slate-500">読み込み中...</div>
+                  </div>
+                </details>
               </div>
-              <details class="mt-3 group">
-                <summary class="cursor-pointer select-none text-sm text-slate-700">ホテルを表示（近い順）</summary>
-                <div class="mt-3" id="hotels-${a.id}">
-                  <div class="text-sm text-slate-500">読み込み中...</div>
-                </div>
-              </details>
             </div>
           </div>
         `;

@@ -76,7 +76,7 @@ def send_api():
 
 JSONのキーは `tourist_spots`, `local_food`, `model_route` としてください。
 
-- `tourist_spots`: おすすめの観光地を3つ、`name` (名称)と `description` (簡単な説明) を含むオブジェクトのリストで挙げてください。
+- `tourist_spots`: おすすめの観光地を3つ、`name` (名称)、 `description` (簡単な説明)、 `imageUrl` (画像URL) を含むオブジェクトのリストで挙げてください。`imageUrl`には、`https://placehold.jp/400x250.png?text=観光地名` の形式で、観光地名を入れたプレースホルダー画像URLを生成してください。
 - `local_food`: 有名な食べ物や名物料理を3つ、`name` (名称)と `description` (簡単な説明) を含むオブジェクトのリストで挙げてください。
 - `model_route`: 1日で楽しめるモデル観光ルートを、`morning`, `lunch`, `afternoon`, `dinner` のキーを持つオブジェクトで提案してください。
 """
