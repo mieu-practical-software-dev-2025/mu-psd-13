@@ -36,7 +36,7 @@ def search():
                 {"role": "system", "content": "あなたは観光案内の専門家です。"},
                 {"role": "user", "content": f"日本の{query}について、観光地・有名な食べ物・おすすめホテルを教えてください。"}
             ],
-            max_tokens=800
+            max_tokens=300
         )
         result_text = completion.choices[0].message.content
 

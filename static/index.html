@@ -5,16 +5,6 @@
   <title>日本観光検索アプリ</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-<<<<<<< HEAD
-=======
-  <meta name="description" content="地名を入力すると、観光地とご当地グルメ、各観光地の最寄り駅/バス停、最寄りホテル（複数）を表示するフロントエンド。バックエンドAPI連携を想定。" />
-  <style>
-    /* スクロール時のモーション軽減 */
-    @media (prefers-reduced-motion: reduce) {
-      * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
-    }
-  </style>
->>>>>>> 5559ba3f7b7b46b915d2a09353d49661de5ef5c1
 </head>
 <body class="bg-gradient-to-r from-blue-100 via-pink-100 to-yellow-100 min-h-screen flex items-center justify-center">
 
@@ -60,7 +50,6 @@
   </div>
 
   <script>
-<<<<<<< HEAD
     const { createApp } = Vue;
 
     createApp({
@@ -82,82 +71,6 @@
           this.loading = true;
           this.error = null;
           this.result = null;
-=======
-    // =====================
-    // ★ API 仕様（想定）★
-    // =====================
-    // 1) 観光地 & ご当地グルメ取得（地名から）
-    // GET /api/attractions?place={place}
-    // Response JSON 例：
-    // {
-    //   "place": "京都",
-    //   "foods": ["湯豆腐", "抹茶スイーツ", "にしんそば"],
-    //   "attractions": [
-    //     {
-    //       "id": "a1",
-    //       "name": "清水寺",
-    //       "description": "世界遺産。舞台からの眺望で有名。",
-    //       "address": "京都市東山区清水",
-    //       "location": { "lat": 34.994856, "lng": 135.785046 },
-    //       "nearestTransit": { "type": "bus", "name": "清水道バス停", "lines": ["市バス"], "distanceMeters": 450 }
-    //     },
-    //     {
-    //       "id": "a2",
-    //       "name": "伏見稲荷大社",
-    //       "description": "千本鳥居で有名。",
-    //       "address": "京都市伏見区深草藪之内町68",
-    //       "location": { "lat": 34.96714, "lng": 135.77267 },
-    //       "nearestTransit": { "type": "station", "name": "稲荷駅", "lines": ["JR奈良線"], "distanceMeters": 120 }
-    //     }
-    //   ]
-    // }
-    //
-    // 2) ホテル検索（観光地座標から近い順で複数件）
-    // GET /api/hotels?lat={lat}&lng={lng}&limit={n}
-    // Response JSON 例：
-    // {
-    //   "hotels": [
-    //     { "name": "ホテルA", "price": 12400, "currency": "JPY", "distanceMeters": 220, "address": "...", "url": "https://..." },
-    //     { "name": "ホテルB", "price": 14800, "currency": "JPY", "distanceMeters": 350, "address": "...", "url": "https://..." }
-    //   ]
-    // }
-
-    // === エンドポイント定義（必要に応じて書き換え） ===
-    const API_ENDPOINTS = {
-    attractions: "/api/attractions",
-    hotels: "/api/hotels"
-    };
-
-    // ユーティリティ
-    const qs = (s, el=document) => el.querySelector(s);
-    const qsa = (s, el=document) => [...el.querySelectorAll(s)];
-    const yen = (n) => n.toLocaleString("ja-JP", { style: "currency", currency: "JPY" });
-    const m2str = (m) => (m >= 1000 ? `${(m/1000).toFixed(1)} km` : `${Math.round(m)} m`);
-
-    // デモデータ（バックエンド未実装時に便利）
-    function demoResponse(place) {
-      const seed = (place || "").trim() || "鎌倉";
-      if (/札幌|北海道/i.test(seed)) {
-        return {
-          place: "札幌",
-          foods: ["ジンギスカン", "スープカレー", "札幌ラーメン"],
-          attractions: [
-            { id: "s1", name: "大通公園", description: "都心の憩いの場。季節のイベント多数。", address: "札幌市中央区大通西", location: {lat:43.0601,lng:141.3565}, nearestTransit: {type:"station", name:"大通駅", lines:["南北線","東西線","東豊線"], distanceMeters: 180} },
-            { id: "s2", name: "藻岩山", description: "日本新三大夜景の一つ。", address: "札幌市南区藻岩山", location: {lat:43.0169,lng:141.3305}, nearestTransit: {type:"bus", name:"もいわ山ロープウェイ入口", lines:["市電⇔バス"], distanceMeters: 420} }
-          ]
-        };
-      }
-      // 既定は京都
-      return {
-        place: "京都",
-        foods: ["湯豆腐", "抹茶スイーツ", "にしんそば"],
-        attractions: [
-          { id: "k1", name: "清水寺", description: "世界遺産。舞台からの眺望で有名。", address: "京都市東山区清水", location: {lat:34.994856,lng:135.785046}, nearestTransit: {type:"bus", name:"清水道バス停", lines:["市バス"], distanceMeters: 450} },
-          { id: "k2", name: "伏見稲荷大社", description: "千本鳥居で有名。", address: "京都市伏見区深草藪之内町68", location: {lat:34.96714,lng:135.77267}, nearestTransit: {type:"station", name:"稲荷駅", lines:["JR奈良線"], distanceMeters: 120} }
-        ]
-      };
-    }
->>>>>>> 5559ba3f7b7b46b915d2a09353d49661de5ef5c1
 
           try {
             const response = await fetch("/search", {
@@ -178,184 +91,8 @@
             this.loading = false;
           }
         }
-<<<<<<< HEAD
       }
     }).mount("#app");
-=======
-      });
-    }
-
-    function renderFoods(root, foods) {
-      if (!foods || foods.length === 0) { root.classList.add('hidden'); return; }
-      root.classList.remove('hidden');
-      root.innerHTML = `
-        <h3 class="text-lg font-semibold mb-2">ご当地グルメ</h3>
-        <ul class="flex flex-wrap gap-2">${foods.map(f => `<li class="px-3 py-1 rounded-full bg-slate-100 border text-sm">${f}</li>`).join('')}</ul>
-      `;
-    }
-
-    function renderAttractions(root, attractions) {
-      root.innerHTML = '';
-      for (const a of attractions) {
-        const card = document.createElement('article');
-        card.className = 'bg-white rounded-2xl shadow p-4';
-        const transit = a.nearestTransit;
-        const transitIcon = transit?.type === 'station' ? '🚉' : '🚌';
-        const lines = (transit?.lines || []).join(' / ');
-        card.innerHTML = `
-          <div class="flex items-start gap-3">
-            <div class="text-2xl">📍</div>
-            <div class="flex-1">
-              <h4 class="text-lg font-semibold">${a.name}</h4>
-              <p class="text-sm text-slate-600">${a.description || ''}</p>
-              <p class="text-sm text-slate-600 mt-1">住所: ${a.address || '-'} </p>
-              <div class="mt-2 text-sm">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200">
-                  <span>${transitIcon} 最寄り${transit?.type === 'station' ? '駅' : 'バス停'}</span>
-                  <strong>${transit?.name || '-'}</strong>
-                  ${lines ? `<span class="text-slate-500">(${lines})</span>` : ''}
-                  ${transit?.distanceMeters ? `<span class="text-slate-500">・約 ${m2str(transit.distanceMeters)}</span>` : ''}
-                </div>
-              </div>
-              <details class="mt-3 group">
-                <summary class="cursor-pointer select-none text-sm text-slate-700">ホテルを表示（近い順）</summary>
-                <div class="mt-3" id="hotels-${a.id}">
-                  <div class="text-sm text-slate-500">読み込み中...</div>
-                </div>
-              </details>
-            </div>
-          </div>
-        `;
-        root.appendChild(card);
-        // ホテル読み込み（遅延）
-        const details = card.querySelector('details');
-        details.addEventListener('toggle', async () => {
-          if (!details.open) return;
-          const container = qs(`#hotels-${a.id}`);
-          await loadHotelsForAttraction(a, container);
-        }, { once: true });
-      }
-    }
-
-    function renderHotels(container, hotels) {
-      if (!hotels || hotels.length === 0) {
-        container.innerHTML = '<p class="text-sm text-slate-500">近隣ホテルが見つかりませんでした。</p>';
-        return;
-      }
-      container.innerHTML = `
-        <ul class="space-y-2">
-          ${hotels.map(h => `
-            <li class="border rounded-xl p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-              <div>
-                <p class="font-medium">${h.name}</p>
-                <p class="text-xs text-slate-600">${h.address || ''}</p>
-                ${h.distanceMeters ? `<p class="text-xs text-slate-500">観光地から約 ${m2str(h.distanceMeters)}</p>` : ''}
-              </div>
-              <div class="flex items-center gap-3">
-                <span class="text-base font-semibold">${h.price ? yen(h.price) : '-'}${h.currency && h.currency !== 'JPY' ? ` <span class="text-xs">(${h.currency})</span>` : ''}</span>
-                ${h.url ? `<a href="${h.url}" target="_blank" class="inline-flex items-center gap-1 text-sky-700 hover:underline text-sm">詳細 <span aria-hidden>↗</span></a>` : ''}
-              </div>
-            </li>`).join('')}
-        </ul>
-      `;
-    }
-
-    // トースト簡易実装
-    function toast(msg, isError=false) {
-      const t = document.createElement('div');
-      t.className = `fixed bottom-4 left-1/2 -translate-x-1/2 rounded-xl px-4 py-2 shadow text-sm ${isError ? 'bg-red-600 text-white' : 'bg-slate-800 text-white'}`;
-      t.textContent = msg;
-      document.body.appendChild(t);
-      setTimeout(() => t.remove(), 2200);
-    }
-
-    // ============
-    // データ取得
-    // ============
-    async function fetchAttractions(place) {
-    const url = `${API_ENDPOINTS.attractions}?place=${encodeURIComponent(place)}`;
-    const res = await fetch(url, { headers: { "Accept": "application/json" } });
-    if (!res.ok) {
-      let detail = ""; try { detail = (await res.json()).error } catch {}
-      throw new Error(`観光地APIエラー (${res.status}) ${detail || ""}`);
-    }
-    return res.json(); // サーバは { place, foods, attractions } を返す
-    }
-
-    async function fetchHotels({ lat, lng }, limit=4) {
-      const url = new URL(API_ENDPOINTS.hotels, location.origin);
-      url.searchParams.set('lat', String(lat));
-      url.searchParams.set('lng', String(lng));
-      url.searchParams.set('limit', String(limit));
-      const res = await fetch(url.toString(), { headers: { 'Accept': 'application/json' } });
-      if (!res.ok) throw new Error('ホテルAPIエラー');
-      return res.json();
-    }
-
-    async function loadHotelsForAttraction(a, container) {
-      try {
-        const useDemo = qs('#demoToggle').checked;
-        let data;
-        if (useDemo) {
-          await new Promise(r => setTimeout(r, 400));
-          data = demoHotels(a.location.lat, a.location.lng, 4);
-        } else {
-          data = await fetchHotels(a.location, 4);
-        }
-        renderHotels(container, data.hotels || []);
-      } catch (e) {
-        container.innerHTML = `<p class="text-sm text-red-600">ホテルの取得に失敗しました：${e.message}</p>`;
-      }
-    }
-
-    // ============
-    // イベント
-    // ============
-    const form = qs('#searchForm');
-    const placeInput = qs('#placeInput');
-    const results = qs('#results');
-    const summaryCard = qs('#summaryCard');
-    const foodsCard = qs('#foodsCard');
-    const attractionsRoot = qs('#attractions');
-    const statusEl = qs('#status');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const place = placeInput.value.trim();
-      if (!place) return;
-      results.classList.add('hidden');
-      summaryCard.classList.add('hidden');
-      foodsCard.classList.add('hidden');
-      attractionsRoot.innerHTML = '';
-      statusEl.innerHTML = '<div class="inline-flex items-center gap-2 text-slate-600"><span class="animate-spin inline-block w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full"></span> 検索中…</div>';
-
-      try {
-        const useDemo = qs('#demoToggle').checked;
-        let data;
-        if (useDemo) {
-          await new Promise(r => setTimeout(r, 600)); // デモらしく少し待機
-          data = demoResponse(place);
-        } else {
-          data = await fetchAttractions(place);
-        }
-
-        statusEl.textContent = '';
-        results.classList.remove('hidden');
-        summaryCard.classList.remove('hidden');
-        renderSummary(summaryCard, data);
-        renderFoods(foodsCard, data.foods || []);
-        renderAttractions(attractionsRoot, data.attractions || []);
-        if ((data.foods || []).length > 0) {
-          foodsCard.classList.remove('hidden');
-        }
-      } catch (err) {
-        statusEl.innerHTML = `<div class="text-red-600">エラー: ${err.message}</div>`;
-      }
-    });
-
-    // エンターで初期フォーカス
-    window.addEventListener('DOMContentLoaded', () => placeInput.focus());
->>>>>>> 5559ba3f7b7b46b915d2a09353d49661de5ef5c1
   </script>
 </body>
 </html>
