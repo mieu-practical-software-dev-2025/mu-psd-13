@@ -96,10 +96,10 @@
     // }
 
     // === エンドポイント定義（必要に応じて書き換え） ===
-    const API_ENDPOINTS = { 
-      attractions: "/api/attractions", 
-      hotels: "/api/hotels" };
-
+    const API_ENDPOINTS = {
+    attractions: "/api/attractions",
+    hotels: "/api/hotels"
+    };
 
     // ユーティリティ
     const qs = (s, el=document) => el.querySelector(s);
@@ -251,36 +251,14 @@
     // データ取得
     // ============
     async function fetchAttractions(place) {
-+   const url = `${API_ENDPOINTS.attractions}?place=${encodeURIComponent(place)}`;
-+   const res = await fetch(url, { headers: { "Accept": "application/json" } });
-+   if (!res.ok) {
-+     let detail = ""; try { detail = (await res.json()).error } catch {}
-+     throw new Error(`観光地APIエラー (${res.status}) ${detail || ""}`);
-+   }
-+   // サーバは { place, foods, attractions } を返すので、そのまま使う
-+   return res.json();
-+ }
-
-  const j = await res.json();
-  const p = j?.processed_data;                  // ← サーバが返す入れ物
-  if (!p) throw new Error("processed_data がありません");
-
-  // --- スキーマ変換（キー名の揃え）---
-  const attractions = (p.tourist_spots || []).map((t, i) => ({
-    id: t.id || `a${i+1}`,
-    name: t.name || "",
-    description: t.description || "",
-    imageUrl: t.imageUrl || (t.name ? `https://placehold.jp/400x250.png?text=${encodeURIComponent(t.name)}` : ""),
-    address: t.address || "",
-    location: t.location || { lat: 0, lng: 0 },
-    nearestTransit: t.nearestTransit || null
-  }));
-  const foods = (p.local_food || []).map(f => (typeof f === "string" ? f : (f?.name || ""))).filter(Boolean);
-
-  // あなたの描画関数が期待する形にして返す
-  return { place, attractions, foods };
-}
-
+    const url = `${API_ENDPOINTS.attractions}?place=${encodeURIComponent(place)}`;
+    const res = await fetch(url, { headers: { "Accept": "application/json" } });
+    if (!res.ok) {
+      let detail = ""; try { detail = (await res.json()).error } catch {}
+      throw new Error(`観光地APIエラー (${res.status}) ${detail || ""}`);
+    }
+    return res.json(); // サーバは { place, foods, attractions } を返す
+    }
 
     async function fetchHotels({ lat, lng }, limit=4) {
       const url = new URL(API_ENDPOINTS.hotels, location.origin);
