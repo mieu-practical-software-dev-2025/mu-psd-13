@@ -1,19 +1,29 @@
 import os, math, json, requests
 from flask import Flask, request, jsonify, send_from_directory
 from openai import OpenAI
+from flask_cors import CORS
 from dotenv import load_dotenv
+
 
 # ===== .env =====
 load_dotenv()
+print("KEY?", bool(os.getenv("OPENTRIPMAP_API_KEY")))
 OPENTRIPMAP_KEY = os.getenv("OPENTRIPMAP_API_KEY")     # 必須
 GOOGLE_KEY      = os.getenv("GOOGLE_MAPS_API_KEY")     # 任意（ホテルを使うなら必須）
 OPENROUTER_KEY  = os.getenv("OPENROUTER_API_KEY")      # 任意（/send_api を使うなら）
 SITE_URL = os.getenv("YOUR_SITE_URL", "http://localhost:5000")
 APP_NAME = os.getenv("YOUR_APP_NAME", "FlaskVueApp")
 
+print("OPENTRIPMAP_KEY loaded:", bool(OPENTRIPMAP_KEY))  # True ならOK
+print("GOOGLE_KEY loaded:", bool(GOOGLE_KEY))
 # ===== Flask =====
-app = Flask(__name__, static_folder=".", static_url_path="")
+app = Flask(__name__, static_folder="static", static_url_path="/static")
 
+# CORS: localhost と 127.0.0.1 の両方、/send_api も許可
+CORS(app, resources={
+    r"/api/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]},
+    r"/send_api": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]},
+})
 # ルート: 同一オリジンで index.html を配る
 @app.route("/", methods=["GET"])
 def index():
