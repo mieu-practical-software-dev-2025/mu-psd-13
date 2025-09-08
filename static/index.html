@@ -102,27 +102,27 @@
       `;
       fridge.appendChild(div);
 
-      // クリックで削除
+      //削除用クリックイベント
       div.addEventListener("click", async () => {
-        const confirmDel = confirm(`${name} を削除しますか？`);
+        const confirmDel = confirm(`${name} を冷蔵庫から削除しますか？`);
         if (!confirmDel) return;
 
-        await fetch("/delete_item", {
-          method:"POST",
+        //サーバーに削除リクエスト
+        await fetch("/remove_item", {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, exp })
+          body: JSON.stringify({ name, exp})
         });
-
         div.remove();
       });
-
+      fridge.appendChild(div);
       // サーバーに保存
       fetch("/add_item", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, exp, src })
       });
-    }); // ← ← ← ここで drop の処理を閉じる！
+    });
 
     // 献立をリクエスト
     menuBtn.addEventListener("click", async () => {
