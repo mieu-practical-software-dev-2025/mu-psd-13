@@ -1,58 +1,214 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
   <title>冷蔵庫管理 & 献立提案</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tailwind -->
+  <script>
+    // Tailwind config: enable class-based dark mode
+    window.tailwind={}
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          boxShadow: {
+            'soft': '0 10px 25px -8px rgba(0,0,0,0.15)'
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Vue -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <meta name="color-scheme" content="light dark" />
   <style>
-    .dropzone { border: 2px dashed #cbd5e1; }
-    .dropzone.dragover { background: #f1f5f9; }
+    .glass {
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(8px);
+    }
+    .dark .glass {
+      background: rgba(17,24,39,0.5);
+      backdrop-filter: blur(8px);
+    }
+    .dropzone { border: 2px dashed rgba(148,163,184,.6); transition: .2s; }
+    .dropzone.dragover { background: rgba(148,163,184,.12); }
+    summary::-webkit-details-marker { display: none; }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-900">
-  <div id="app" class="max-w-4xl mx-auto p-6">
-    <h1 class="text-2xl font-bold mb-4">🍳 冷蔵庫管理 & 献立提案</h1>
-
-    <!-- 食材追加 -->
-    <form @submit.prevent="addFood" class="mb-6 space-y-3">
-      <input type="text" v-model="newFood.name" placeholder="食材名（例：トマト）" class="border p-2 w-full rounded" required>
-      <input type="date" v-model="newFood.expiry" class="border p-2 w-full rounded" required>
-
-      <!-- ドロップゾーン -->
-      <div class="dropzone rounded p-4 text-center"
-           :class="{ dragover: dragOver }"
-           @dragover.prevent="dragOver = true"
-           @dragleave.prevent="dragOver = false"
-           @drop.prevent="onDrop">
-        <p class="text-sm text-gray-600">ここに画像をドラッグ＆ドロップ</p>
-        <p class="text-xs text-gray-500 mt-1">または下のボタンから選択</p>
+<body class="bg-gradient-to-b from-amber-50 to-white dark:from-slate-900 dark:to-slate-950 text-gray-900 dark:text-gray-100 selection:bg-amber-200/70">
+  <div id="app" class="min-h-dvh">
+    <!-- Hero -->
+    <header class="relative overflow-hidden">
+      <div class="absolute inset-0 -z-10 opacity-40 dark:opacity-30"
+           style="background: radial-gradient(1000px 400px at 10% -10%, rgba(250,204,21,.45), transparent 60%),
+                          radial-gradient(900px 380px at 90% -20%, rgba(59,130,246,.35), transparent 60%);">
       </div>
+      <div class="max-w-6xl mx-auto px-5 pt-10 pb-6 flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">
+            🍳 冷蔵庫管理 & 献立提案
+          </h1>
+          <p class="mt-2 text-sm md:text-base text-gray-600 dark:text-gray-300">
+            画像ドラッグ&ドロップで食材追加。AIが作り方つきで提案。レシピは Cookpad で検索できます。
+          </p>
+        </div>
+        <button @click="toggleTheme"
+                class="glass shadow-soft px-3 py-2 rounded-xl text-sm hover:scale-[1.02] active:scale-[.98] transition">
+          <span v-if="theme==='light'">🌙 ダーク</span>
+          <span v-else>☀️ ライト</span>
+        </button>
+      </div>
+    </header>
 
-      <input type="file" accept="image/*" @change="onFileChange" class="border p-2 w-full rounded">
+    <main class="max-w-6xl mx-auto px-5 pb-20">
+      <!-- Card: Add Ingredient -->
+      <section class="glass shadow-soft rounded-2xl p-5 md:p-6 mt-4">
+        <div class="flex items-start gap-4">
+          <div class="hidden md:block text-3xl">🧊</div>
+          <div class="w-full">
+            <h2 class="font-semibold text-lg mb-3">食材を追加</h2>
 
-      <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">追加</button>
-    </form>
+            <form @submit.prevent="addFood" class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input type="text" v-model="newFood.name" placeholder="食材名（例：トマト）"
+                       class="w-full rounded-xl border border-gray-300/70 dark:border-slate-600 bg-white/70 dark:bg-slate-800/60 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                       required>
+                <input type="date" v-model="newFood.expiry"
+                       class="w-full rounded-xl border border-gray-300/70 dark:border-slate-600 bg-white/70 dark:bg-slate-800/60 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                       required>
+                <input type="file" accept="image/*" @change="onFileChange"
+                       class="w-full rounded-xl border border-gray-300/70 dark:border-slate-600 bg-white/70 dark:bg-slate-800/60 px-3 py-2">
+              </div>
 
-    <!-- 食材一覧 -->
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-      <div v-for="food in foods" :key="food.id"
-           class="bg-white p-3 shadow rounded cursor-pointer hover:ring"
-           @click="confirmDelete(food)">
-        <img :src="food.image" class="w-full h-32 object-cover rounded" alt="">
-        <h3 class="font-bold mt-2">{{ food.name }}</h3>
-        <p class="text-sm text-gray-600">消費期限: {{ food.expiry }}</p>
+              <div class="dropzone rounded-xl p-4 text-center"
+                   :class="{ dragover: dragOver }"
+                   @dragover.prevent="dragOver = true"
+                   @dragleave.prevent="dragOver = false"
+                   @drop.prevent="onDrop">
+                <p class="text-sm text-gray-600 dark:text-gray-300">ここに画像をドラッグ＆ドロップ</p>
+                <p class="text-xs text-gray-500 mt-1">または上のファイル選択を利用</p>
+                <div v-if="previewUrl" class="mt-3 flex items-center justify-center">
+                  <img :src="previewUrl" alt="preview" class="h-20 w-20 object-cover rounded-lg ring-1 ring-black/5">
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <button type="submit"
+                        class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl shadow-soft transition">
+                  追加する
+                </button>
+                <span class="text-sm text-gray-500" v-if="newFood.image">選択中: {{ newFood.image.name }}</span>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Inventory -->
+      <section class="mt-8">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-semibold text-lg">冷蔵庫</h2>
+          <div class="text-sm text-gray-500">合計: {{ foods.length }} 件</div>
+        </div>
+
+        <div v-if="foods.length === 0" class="glass shadow-soft rounded-2xl p-6 text-gray-600 dark:text-gray-300">
+          まだ食材がありません。画像と一緒に食材名・消費期限を追加してください。
+        </div>
+
+        <transition-group name="list" tag="div"
+          class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div v-for="food in foods" :key="food.id"
+               class="group relative bg-white/70 dark:bg-slate-800/60 ring-1 ring-black/5 rounded-2xl overflow-hidden shadow-soft hover:-translate-y-0.5 hover:shadow-lg transition cursor-pointer"
+               @click="openDelete(food)">
+            <img :src="food.image" class="w-full h-36 object-cover" alt="">
+            <div class="p-3">
+              <h3 class="font-bold truncate">{{ food.name }}</h3>
+              <p class="text-xs text-gray-500 mt-0.5">消費期限: {{ food.expiry }}</p>
+              <div class="mt-2">
+                <span :class="['inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full',
+                              badgeClass(daysLeft(food.expiry))]">
+                  ⏳ 残り {{ daysLeft(food.expiry) }} 日
+                </span>
+              </div>
+            </div>
+            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
+              <span class="bg-white/80 dark:bg-slate-900/70 backdrop-blur px-2 py-1 rounded-md text-[11px]">クリックで削除</span>
+            </div>
+          </div>
+        </transition-group>
+      </section>
+
+      <!-- Suggest Recipes -->
+      <section class="mt-10">
+        <div class="flex items-center gap-3">
+          <button @click="suggestMenu"
+                  class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-soft transition disabled:opacity-60"
+                  :disabled="loadingSuggest">
+            <svg v-if="loadingSuggest" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".2" stroke-width="4"/>
+              <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+            <span>献立提案</span>
+          </button>
+          <p class="text-sm text-gray-500" v-if="!foods.length">冷蔵庫が空です。食材を追加してください。</p>
+        </div>
+
+        <div v-if="menuMessage || recipes.length" class="mt-5 space-y-3">
+          <p v-if="recipes.length === 0" class="glass shadow-soft p-4 rounded-xl">{{ menuMessage }}</p>
+
+          <ol v-else class="list-decimal pl-6 space-y-3">
+            <li v-for="(r, i) in recipes" :key="i"
+                class="bg-white/70 dark:bg-slate-800/60 ring-1 ring-black/5 rounded-2xl shadow-soft p-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <h3 class="font-bold text-lg">{{ r.title }}</h3>
+                <a :href="r.search_url" target="_blank" rel="noopener"
+                   class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition">
+                  🔎 Cookpadで検索
+                </a>
+              </div>
+
+              <details class="mt-2">
+                <summary class="cursor-pointer select-none py-1.5 px-3 bg-gray-100 dark:bg-slate-700 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600">
+                  作り方を表示
+                </summary>
+                <ol class="list-decimal pl-6 mt-2 space-y-1">
+                  <li v-for="(step, j) in r.steps" :key="j">{{ step }}</li>
+                </ol>
+                <p v-if="r.notes" class="text-sm text-gray-600 mt-2">メモ: {{ r.notes }}</p>
+              </details>
+            </li>
+          </ol>
+        </div>
+      </section>
+    </main>
+
+    <!-- Delete Modal -->
+    <div v-if="modal.open" class="fixed inset-0 z-50 grid place-items-center p-4">
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="modal.open=false"></div>
+      <div class="relative glass shadow-soft rounded-2xl p-6 max-w-md w-full">
+        <h3 class="font-bold text-lg">削除しますか？</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+          「{{ modal.target?.name }}」を冷蔵庫から削除します。
+        </p>
+        <div class="mt-5 flex items-center justify-end gap-2">
+          <button class="px-3 py-2 rounded-lg border border-gray-300/70 dark:border-slate-600"
+                  @click="modal.open=false">キャンセル</button>
+          <button class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white"
+                  @click="deleteFood(modal.target.id)">削除する</button>
+        </div>
       </div>
     </div>
 
-    <!-- 献立提案 -->
-    <button @click="suggestMenu" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">献立提案</button>
-    <div v-if="menuMessage || menu.length" class="mt-4 p-4 bg-gray-200 rounded">
-      <p v-if="menu.length === 0">{{ menuMessage }}</p>
-      <ol v-else class="list-decimal pl-6">
-        <li v-for="(item, i) in menu" :key="i">{{ item }}</li>
-      </ol>
+    <!-- Toasts -->
+    <div class="fixed bottom-5 right-5 space-y-2 z-[60]">
+      <div v-for="t in toasts" :key="t.id"
+           class="glass shadow-soft rounded-xl px-4 py-2 text-sm animate-[fadein_.2s_ease]">
+        {{ t.msg }}
+      </div>
     </div>
   </div>
 
@@ -63,31 +219,78 @@
         return {
           foods: [],
           newFood: { name: "", expiry: "", image: null },
+          previewUrl: "",
           dragOver: false,
-          menu: [],
-          menuMessage: ""
+          recipes: [],
+          menuMessage: "",
+          loadingSuggest: false,
+          modal: { open: false, target: null },
+          toasts: [],
+          theme: (localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark':'light'))
         }
+      },
+      created() {
+        this.applyTheme()
       },
       mounted() {
         this.fetchFoods()
       },
       methods: {
+        // ---- THEME ----
+        toggleTheme() {
+          this.theme = this.theme === 'light' ? 'dark' : 'light'
+          localStorage.setItem('theme', this.theme)
+          this.applyTheme()
+        },
+        applyTheme() {
+          if (this.theme === 'dark') document.documentElement.classList.add('dark')
+          else document.documentElement.classList.remove('dark')
+        },
+
+        // ---- UTILS ----
+        toast(msg, timeout=2200) {
+          const id = Math.random().toString(36).slice(2)
+          this.toasts.push({ id, msg })
+          setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id) }, timeout)
+        },
+        daysLeft(dateStr) {
+          const today = new Date()
+          const d = new Date(dateStr)
+          // Clear time part
+          today.setHours(0,0,0,0); d.setHours(0,0,0,0)
+          const diff = Math.ceil((d - today) / (1000*60*60*24))
+          return diff
+        },
+        badgeClass(days) {
+          if (days <= 0) return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200'
+          if (days <= 2) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-200'
+          if (days <= 5) return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200'
+          return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
+        },
+
+        // ---- API ----
         async fetchFoods() {
           const res = await fetch("/get_foods")
           this.foods = await res.json()
         },
         onFileChange(e) {
           const f = e.target.files?.[0]
-          if (f) this.newFood.image = f
+          if (f) {
+            this.newFood.image = f
+            this.previewUrl = URL.createObjectURL(f)
+          }
         },
         onDrop(e) {
           this.dragOver = false
           const f = e.dataTransfer.files?.[0]
-          if (f) this.newFood.image = f
+          if (f) {
+            this.newFood.image = f
+            this.previewUrl = URL.createObjectURL(f)
+          }
         },
         async addFood() {
           if (!this.newFood.image) {
-            alert("画像を選択またはドロップしてください")
+            this.toast("画像を選択またはドロップしてください")
             return
           }
           const formData = new FormData()
@@ -99,35 +302,61 @@
           const data = await res.json()
           if (data.status === "success") {
             this.newFood = { name: "", expiry: "", image: null }
+            this.previewUrl = ""
             await this.fetchFoods()
+            this.toast("食材を追加しました")
           } else {
-            alert(data.message || "追加に失敗しました")
+            this.toast(data.message || "追加に失敗しました")
           }
         },
-        async confirmDelete(food) {
-          if (confirm(`「${food.name}」を削除しますか？`)) {
-            const res = await fetch(`/delete_food/${food.id}`, { method: "DELETE" })
-            const data = await res.json()
-            if (data.status === "success") {
-              await this.fetchFoods()
-            } else {
-              alert("削除に失敗しました")
-            }
+        openDelete(food) {
+          this.modal.open = true
+          this.modal.target = food
+        },
+        async deleteFood(id) {
+          const res = await fetch(`/delete_food/${id}`, { method: "DELETE" })
+          const data = await res.json()
+          this.modal.open = false
+          if (data.status === "success") {
+            await this.fetchFoods()
+            this.toast("削除しました")
+          } else {
+            this.toast("削除に失敗しました")
           }
         },
         async suggestMenu() {
-          const res = await fetch("/suggest_menu", { method: "POST" })
-          const data = await res.json()
-          if (Array.isArray(data.menu) && data.menu.length > 0) {
-            this.menu = data.menu
-            this.menuMessage = ""
-          } else {
-            this.menu = []
-            this.menuMessage = data.message || "献立が生成できませんでした。"
+          this.loadingSuggest = true
+          try {
+            const res = await fetch("/suggest_menu", { method: "POST" })
+            const data = await res.json()
+            if (Array.isArray(data.recipes) && data.recipes.length > 0) {
+              this.recipes = data.recipes
+              this.menuMessage = ""
+              // スクロールして見せる
+              requestAnimationFrame(() => {
+                document.querySelector('section.mt-10')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              })
+            } else {
+              this.recipes = []
+              this.menuMessage = data.message || "献立が生成できませんでした。"
+            }
+          } catch (e) {
+            this.recipes = []
+            this.menuMessage = "エラーが発生しました。"
+          } finally {
+            this.loadingSuggest = false
           }
         }
       }
     }).mount("#app")
   </script>
+
+  <!-- Simple list transition -->
+  <style>
+    .list-enter-active, .list-leave-active { transition: all .2s ease; }
+    .list-enter-from { opacity: 0; transform: translateY(4px); }
+    .list-leave-to   { opacity: 0; transform: translateY(-4px); }
+    @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  </style>
 </body>
 </html>
