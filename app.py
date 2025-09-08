@@ -28,42 +28,39 @@ def get_items():
 def get_menu():
     if not fridge:
         return jsonify({"menu": "冷蔵庫が空です。食材を追加してください。"})
-    
+
     items = ", ".join([item["name"] for item in fridge])
-    prompt = f"以下の食材を使って献立を提案してください。ただし、箇条書きで五つほどで大丈夫です.箇条書きのみ出力: {items}"
+    prompt = f"以下の食材を使って献立を提案してください.ただし、箇条書きのみ出力で5つ程度で大丈夫です。: {items}"
 
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json"
     }
     data = {
-        "model": "openai/gpt-4o-mini",  # お好きなモデルに変更可
+        "model": "openai/gpt-4o-mini",
         "messages": [
             {"role": "system", "content": "あなたは家庭の料理アドバイザーです。"},
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 500
+        "max_tokens": 100
     }
 
     try:
         response = requests.post("https://openrouter.ai/api/v1/chat/completions",
                                  headers=headers, json=data)
         result = response.json()
+        # レスポンス確認用
         print(result)
 
+        # choices が存在するか確認
         if "choices" in result and len(result["choices"]) > 0:
             menu = result["choices"][0]["message"]["content"]
         else:
-            menu = f"API応答に問題があります: {result}"
+            menu = f"API 応答に問題があります: {result}"
     except Exception as e:
         menu = f"エラーが発生しました: {e}"
 
     return jsonify({"menu": menu})
-
-@app.route('/clear', methods=['POST'])
-def clear():
-    fridge.clear()
-    return jsonify({"status": "cleared"})
 
 @app.route('/remove_item', methods=['POST'])
 def remove_item():
@@ -74,6 +71,11 @@ def remove_item():
     global fridge
     fridge = [item for item in fridge if not (item["name"] == name and item["exp"] == exp)]
     return jsonify({"status": "removed", "fridge": fridge})
+
+@app.route('/clear', methods=['POST'])
+def clear():
+    fridge.clear()
+    return jsonify({"status": "cleared"})
 
 if __name__ == '__main__':
     app.run(debug=True)
