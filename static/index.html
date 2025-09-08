@@ -2,287 +2,132 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>日本観光検索アプリ</title>
-
-  <style>
-    #map {
-      height: 400px;
-      width: 100%;
-      margin-top: 20px;
-      border: 2px solid #ccc;
-      border-radius: 10px;
-    }
-  </style>
-
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <title>冷蔵庫管理 & 献立提案</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    .dropzone { border: 2px dashed #cbd5e1; }
+    .dropzone.dragover { background: #f1f5f9; }
+  </style>
 </head>
-<body class="bg-gradient-to-r from-blue-100 via-pink-100 to-yellow-100 min-h-screen flex items-center justify-center">
+<body class="bg-gray-100 text-gray-900">
+  <div id="app" class="max-w-4xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">🍳 冷蔵庫管理 & 献立提案</h1>
 
-  <div id="app" class="w-full max-w-4xl p-8 bg-white/90 backdrop-blur rounded-2xl shadow-2xl">
-    <!-- ヘッダー -->
-    <div class="text-center mb-6">
-      <h1 class="text-3xl font-bold text-blue-700 mb-2">🌸 日本観光検索アプリ 🌸</h1>
-      <p class="text-gray-600">地名を入力すると観光地・食べ物・ホテルをおすすめします（日本国内限定）</p>
-    </div>
+    <!-- 食材追加 -->
+    <form @submit.prevent="addFood" class="mb-6 space-y-3">
+      <input type="text" v-model="newFood.name" placeholder="食材名（例：トマト）" class="border p-2 w-full rounded" required>
+      <input type="date" v-model="newFood.expiry" class="border p-2 w-full rounded" required>
 
-    <!-- 入力フォーム（Enterで実行） -->
-    <form class="flex gap-2 mb-6" @submit.prevent="search">
-      <input v-model="query"
-             type="text"
-             placeholder="例: 京都, 東京, 札幌..."
-             class="flex-1 border-2 border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-400 outline-none">
-      <button type="submit"
-              class="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform">
-        検索
-      </button>
+      <!-- ドロップゾーン -->
+      <div class="dropzone rounded p-4 text-center"
+           :class="{ dragover: dragOver }"
+           @dragover.prevent="dragOver = true"
+           @dragleave.prevent="dragOver = false"
+           @drop.prevent="onDrop">
+        <p class="text-sm text-gray-600">ここに画像をドラッグ＆ドロップ</p>
+        <p class="text-xs text-gray-500 mt-1">または下のボタンから選択</p>
+      </div>
+
+      <input type="file" accept="image/*" @change="onFileChange" class="border p-2 w-full rounded">
+
+      <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">追加</button>
     </form>
 
-    <!-- ローディング -->
-    <div v-if="loading" class="text-center text-gray-500 animate-pulse">検索中です...✨</div>
-
-    <!-- エラー -->
-    <div v-if="error" class="text-center text-red-500 font-semibold">{{ error }}</div>
-
-    <!-- 結果表示（カードUI） -->
-    <div v-if="cards" class="mt-6">
-      <h2 class="text-xl font-semibold mb-4 text-indigo-600">📍 検索結果</h2>
-
-      <!-- 画像 -->
-      <div v-if="image" class="mb-6">
-        <img :src="image" alt="観光地の写真" class="rounded-lg shadow-md w-full object-cover max-h-80">
-      </div>
-
-      <!-- カードUI -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div v-for="(list, key) in cards.sections" :key="key"
-             class="rounded-2xl border bg-white shadow-sm p-4">
-          <div class="flex items-center gap-2 mb-2">
-            <span v-if="key==='観光地'">🗺️</span>
-            <span v-else-if="key==='名物グルメ'">🍽️</span>
-            <span v-else>🏨</span>
-            <h3 class="font-semibold text-gray-800">{{ key }}</h3>
-          </div>
-          <ul class="space-y-2">
-            <li v-for="it in list" :key="it.name" class="text-sm leading-6">
-              <div class="font-semibold">
-                <!-- ホテルは URL があればリンク化 -->
-                <template v-if="key==='おすすめホテル' && it.url">
-                  <a :href="it.url" target="_blank" rel="noopener" class="text-blue-600 hover:underline">
-                    {{ it.name }}
-                  </a>
-                </template>
-                <template v-else>
-                  <span class="text-gray-900">{{ it.name }}</span>
-                </template>
-              </div>
-              <div class="text-gray-600">{{ it.desc }}</div>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- モデルルート -->
-      <div v-if="cards.route" class="rounded-xl border p-4 bg-amber-50 border-amber-200 mb-4">
-        <div class="font-semibold mb-1">🧭 モデルルート</div>
-        <div class="text-sm whitespace-pre-wrap">{{ cards.route }}</div>
+    <!-- 食材一覧 -->
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+      <div v-for="food in foods" :key="food.id"
+           class="bg-white p-3 shadow rounded cursor-pointer hover:ring"
+           @click="confirmDelete(food)">
+        <img :src="food.image" class="w-full h-32 object-cover rounded" alt="">
+        <h3 class="font-bold mt-2">{{ food.name }}</h3>
+        <p class="text-sm text-gray-600">消費期限: {{ food.expiry }}</p>
       </div>
     </div>
 
-    <!-- ★ 地図は常設（DOMから消さない）。表示/非表示だけ v-show で制御 -->
-    <div id="map" v-show="cards"></div>
+    <!-- 献立提案 -->
+    <button @click="suggestMenu" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">献立提案</button>
+    <div v-if="menuMessage || menu.length" class="mt-4 p-4 bg-gray-200 rounded">
+      <p v-if="menu.length === 0">{{ menuMessage }}</p>
+      <ol v-else class="list-decimal pl-6">
+        <li v-for="(item, i) in menu" :key="i">{{ item }}</li>
+      </ol>
+    </div>
   </div>
 
   <script>
-    const { createApp, nextTick } = Vue;
-
+    const { createApp } = Vue
     createApp({
       data() {
         return {
-          query: "",
-          image: null,
-          loading: false,
-          error: null,
-          cards: null,
-          map: null,
-          marker: null,
-          mapsLoaded: false
-        };
-      },
-
-      methods: {
-        /* ===== Google Maps を /config から読み込み ===== */
-        async loadGoogleMaps() {
-          try {
-            const res = await fetch("/config");
-            const cfg = await res.json();
-            const key = (cfg && cfg.GOOGLE_MAPS_JS_KEY) || "";
-            if (!key) {
-              this.error = "Google MapsのAPIキーが未設定です（/config が空）。.env を確認してください。";
-              console.error("Missing GOOGLE_MAPS_JS_KEY from /config");
-              return;
-            }
-
-            const url = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}`;
-            await new Promise((resolve, reject) => {
-              const s = document.createElement("script");
-              s.src = url;
-              s.async = true;
-              s.onload = () => { this.mapsLoaded = true; resolve(); };
-              s.onerror = (e) => { this.error = "Google Mapsの読み込みに失敗しました。"; reject(e); };
-              document.head.appendChild(s);
-            });
-
-            if (!window.google || !google.maps) {
-              this.error = "Google Mapsの初期化に失敗しました（Consoleを確認）。";
-              console.error("[Maps] google.maps is undefined");
-              return;
-            }
-          } catch (e) {
-            console.error("loadGoogleMaps failed:", e);
-            if (!this.error) this.error = "Google Mapsの読み込みに失敗しました。";
-          }
-        },
-
-        /* ===== 生テキストをパースして sections + route に変換 =====
-           観光地・名物グルメ: 「名前 - 説明」
-           おすすめホテル   : 「ホテル名 - 説明 - 公式URL」
-        */
-        parseSections(raw) {
-          const sections = { "観光地": [], "名物グルメ": [], "おすすめホテル": [] };
-          let current = null;
-          let route = "";
-
-          (raw || "").split("\n").forEach(line => {
-            line = line.trim();
-            if (/^観光地\s*$/.test(line))         { current = "観光地"; return; }
-            if (/^名物グルメ\s*$/.test(line))     { current = "名物グルメ"; return; }
-            if (/^おすすめホテル\s*$/.test(line)) { current = "おすすめホテル"; return; }
-
-            // ホテルは URL 付きに対応（ホテル名 - 説明 - URL）
-            if (current === "おすすめホテル") {
-              const m3 = line.match(/^(.+?)\s*-\s*(.+?)\s*-\s*(https?:\/\/\S+)/);
-              if (m3) {
-                sections[current].push({ name: m3[1], desc: m3[2], url: m3[3] });
-                return;
-              }
-            }
-
-            // 通常の項目（名前 - 説明）
-            const m2 = line.match(/^(.+?)\s*-\s*(.+)$/);
-            if (m2 && current) {
-              sections[current].push({ name: m2[1], desc: m2[2] });
-            }
-
-            // モデルルート（n日目：〜）
-            if (/^\d+日目：/.test(line)) {
-              route += line + "\n";
-            }
-          });
-
-          return { sections, route: route.trim() };
-        },
-
-        /* ===== 検索処理 ===== */
-        async search() {
-          if (!this.query) {
-            this.error = "地名を入力してください";
-            return;
-          }
-          this.loading = true;
-          this.error = null;
-          this.cards = null;
-
-          try {
-            const res = await fetch("/search", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ query: this.query })
-            });
-            const data = await res.json();
-
-            if (!res.ok) {
-              this.error = data?.message || data?.error || `サーバーエラー (${res.status})`;
-              return;
-            }
-            if (data.error) {
-              this.error = data.error;
-              return;
-            }
-
-            this.image = data.image;
-            this.cards = this.parseSections(data.result);
-
-            // DOMへカード・地図枠の反映を待ってから地図更新
-            await nextTick();
-            await this.showMap(this.query);
-          } catch (err) {
-            this.error = "サーバーエラー: " + err;
-          } finally {
-            this.loading = false;
-          }
-        },
-
-        /* ===== 地図表示（日本国内に制約・再検索でも安定） ===== */
-        async showMap(address) {
-          if (!this.mapsLoaded || !window.google || !google.maps) {
-            this.error = "Google Mapsの読み込みに失敗しました。";
-            console.error("[Maps] Not loaded or API unavailable");
-            return;
-          }
-
-          // 念のため、DOMに #map があるのを保証
-          await nextTick();
-          const mapEl = document.getElementById("map");
-          if (!mapEl) {
-            console.warn("#map element not found");
-            return;
-          }
-
-          const geocoder = new google.maps.Geocoder();
-
-          return new Promise((resolve) => {
-            geocoder.geocode(
-              { address, componentRestrictions: { country: "JP" } },
-              (results, status) => {
-                if (status !== "OK" || !results?.[0]) {
-                  this.error = "地図を表示できません: " + status;
-                  console.error("[Geocode] failed:", status);
-                  return resolve(false);
-                }
-
-                const loc = results[0].geometry.location;
-
-                // 既存 map のコンテナが差し替わっていたら再初期化
-                const needsRecreate = !this.map || (this.map.getDiv && this.map.getDiv() !== mapEl);
-
-                if (needsRecreate) {
-                  this.map = new google.maps.Map(mapEl, { center: loc, zoom: 13 });
-                } else {
-                  this.map.setCenter(loc);
-                  this.map.setZoom(13);
-                }
-
-                // マーカー更新
-                if (this.marker) this.marker.setMap(null);
-                this.marker = new google.maps.Marker({ map: this.map, position: loc, title: address });
-
-                // 表示切替直後の再描画
-                if (google.maps.event && this.map) {
-                  google.maps.event.trigger(this.map, "resize");
-                }
-
-                resolve(true);
-              }
-            );
-          });
+          foods: [],
+          newFood: { name: "", expiry: "", image: null },
+          dragOver: false,
+          menu: [],
+          menuMessage: ""
         }
       },
+      mounted() {
+        this.fetchFoods()
+      },
+      methods: {
+        async fetchFoods() {
+          const res = await fetch("/get_foods")
+          this.foods = await res.json()
+        },
+        onFileChange(e) {
+          const f = e.target.files?.[0]
+          if (f) this.newFood.image = f
+        },
+        onDrop(e) {
+          this.dragOver = false
+          const f = e.dataTransfer.files?.[0]
+          if (f) this.newFood.image = f
+        },
+        async addFood() {
+          if (!this.newFood.image) {
+            alert("画像を選択またはドロップしてください")
+            return
+          }
+          const formData = new FormData()
+          formData.append("name", this.newFood.name)
+          formData.append("expiry", this.newFood.expiry)
+          formData.append("image", this.newFood.image)
 
-      async mounted() {
-        await this.loadGoogleMaps();
+          const res = await fetch("/add_food", { method: "POST", body: formData })
+          const data = await res.json()
+          if (data.status === "success") {
+            this.newFood = { name: "", expiry: "", image: null }
+            await this.fetchFoods()
+          } else {
+            alert(data.message || "追加に失敗しました")
+          }
+        },
+        async confirmDelete(food) {
+          if (confirm(`「${food.name}」を削除しますか？`)) {
+            const res = await fetch(`/delete_food/${food.id}`, { method: "DELETE" })
+            const data = await res.json()
+            if (data.status === "success") {
+              await this.fetchFoods()
+            } else {
+              alert("削除に失敗しました")
+            }
+          }
+        },
+        async suggestMenu() {
+          const res = await fetch("/suggest_menu", { method: "POST" })
+          const data = await res.json()
+          if (Array.isArray(data.menu) && data.menu.length > 0) {
+            this.menu = data.menu
+            this.menuMessage = ""
+          } else {
+            this.menu = []
+            this.menuMessage = data.message || "献立が生成できませんでした。"
+          }
+        }
       }
-    }).mount("#app");
+    }).mount("#app")
   </script>
 </body>
 </html>
