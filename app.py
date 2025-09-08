@@ -42,7 +42,7 @@ def get_menu():
             {"role": "system", "content": "あなたは家庭の料理アドバイザーです。"},
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 100
+        "max_tokens": 150
     }
 
     try:
