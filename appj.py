@@ -96,7 +96,7 @@ def vision_autoname(image_path: str) -> str:
         ]
         headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"}
         body = {"model": OPENROUTER_MODEL, "messages": messages, "temperature": 0.2}
-        resp = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=body, timeout=60)
+        resp = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=body, timeout=(15, 240))
         resp.raise_for_status()
         content = resp.json()["choices"][0]["message"]["content"].strip()
         content = content.splitlines()[0].strip(" 　「」[]()")
@@ -618,4 +618,5 @@ if __name__ == "__main__":
     except Exception:
         print("[Seed Autoscan Error]", traceback.format_exc())
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)
+
 
