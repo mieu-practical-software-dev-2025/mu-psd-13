@@ -327,7 +327,7 @@ def take_undo(ids: List[str]) -> List[Dict]:
 # =====================
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("indexj.html")
 
 @app.route("/api/meta", methods=["GET"])
 def meta():
@@ -618,3 +618,4 @@ if __name__ == "__main__":
     except Exception:
         print("[Seed Autoscan Error]", traceback.format_exc())
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)
+
