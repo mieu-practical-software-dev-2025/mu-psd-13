@@ -228,7 +228,7 @@ def import_images_autoscan() -> Tuple[int, int]:
 # =====================
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("indexj.html")
 
 @app.route("/api/items", methods=["GET"])
 def items_api():
@@ -260,3 +260,4 @@ if __name__ == "__main__":
     added, found = import_images_autoscan()
     print(f"[Images Autoscan] added {added} / found {found}")
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)
+
