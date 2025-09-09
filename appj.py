@@ -149,6 +149,7 @@ def vision_autoname(image_path: str) -> str:
             "Content-Type": "application/json"
         }
         body = {"model": OPENROUTER_MODEL, "messages": messages, "temperature": 0.2}
+
         resp = SESSION.post(
             "https://openrouter.ai/api/v1/chat/completions",
             headers=headers,
@@ -159,14 +160,18 @@ def vision_autoname(image_path: str) -> str:
         content = resp.json()["choices"][0]["message"]["content"].strip()
         return content.splitlines()[0].strip(" 　「」[]()")
     except requests.exceptions.Timeout:
-        print("[Vision Autoname Timeout]", image_path)
+        # タイムアウト時もエラーを表示せず「実行中…」を出す
+        print("実行中...")
         return ""
-    except requests.exceptions.ConnectionError as e:
-        print("[Vision Autoname ConnError]", e)
+    except requests.exceptions.ConnectionError:
+        # 接続エラー時もエラーを表示せず「実行中…」を出す
+        print("実行中...")
         return ""
     except Exception:
+        # 予期せぬ例外は一応トレースを残しておく（必要なら消せます）
         print("[Vision Autoname Error]", traceback.format_exc())
         return ""
+
 
 # =====================
 # レシピ（省略版: 同じ）
@@ -260,4 +265,5 @@ if __name__ == "__main__":
     added, found = import_images_autoscan()
     print(f"[Images Autoscan] added {added} / found {found}")
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)
+
 
