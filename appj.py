@@ -21,7 +21,7 @@ BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES  = os.path.join(BASE_DIR, "templates")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 UPLOAD_DIR = os.path.join(STATIC_DIR, "uploads")
-SEED_DIR   = os.path.join(STATIC_DIR, "images")
+SEED_DIR   = os.path.join(STATIC_DIR, "images")   # ← スキャン対象は static/images に統一
 DATA_DIR   = os.path.join(BASE_DIR, "data")
 DB_PATH    = os.path.join(DATA_DIR, "items.json")
 
@@ -179,9 +179,13 @@ def llm_recipes(ings_with_qty: List[Dict], constraints: Dict) -> List[Dict]:
         return []
 
 # =====================
-# seedスキャン（期限空/数量1/追加フィールド既定）
+# 画像スキャン（ボタン押下時のみ実行）
 # =====================
 def import_seed_autoscan() -> Tuple[int, int]:
+    """
+    static/images にある画像を在庫として登録。
+    起動時は呼ばない。/api/seed/rescan POST でのみ実行。
+    """
     if not os.path.isdir(SEED_DIR):
         return 0, 0
     items = load_db()
@@ -193,7 +197,7 @@ def import_seed_autoscan() -> Tuple[int, int]:
             continue
         found += 1
         safe = secure_filename(filename)
-        url = f"/static/seed/{safe}"
+        url = f"/static/images/{safe}"   # ← URL も images に統一
         if url in existing_urls:
             continue
         auto_name = ""
@@ -600,6 +604,10 @@ def substitutes():
 
 @app.route("/api/seed/rescan", methods=["POST"])
 def seed_rescan():
+    """
+    『イメージスキャン』ボタン専用エンドポイント。
+    起動時は呼ばれません。必要な時だけ実行されます。
+    """
     try:
         added, found = import_seed_autoscan()
         return jsonify({"added": added, "found": found})
@@ -611,12 +619,6 @@ def static_files(filename):
     return send_from_directory(STATIC_DIR, filename)
 
 if __name__ == "__main__":
-    try:
-        added, found = import_seed_autoscan()
-        if added:
-            print(f"[Seed Autoscan] added {added} / found {found}")
-    except Exception:
-        print("[Seed Autoscan Error]", traceback.format_exc())
+    # ★ 重要：起動時の自動スキャンはしない！
+    # （ボタン押下時のみ /api/seed/rescan で実行）
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)
-
-
