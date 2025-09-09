@@ -52,6 +52,7 @@
     .modal-bg { background: rgba(0,0,0,.45); backdrop-filter: blur(4px); }
     .skeleton { background: linear-gradient(90deg, rgba(0,0,0,.06) 25%, rgba(0,0,0,.12) 37%, rgba(0,0,0,.06) 63%); background-size: 700px 100%; animation: shimmer 2.2s linear infinite; }
     @keyframes shimmer { 0%{background-position:-700px 0}100%{background-position:700px 0} }
+    /* カードの微グロー */
     .card-glass { position: relative; }
     .card-glass::after{
       content:""; position:absolute; inset:0; border-radius:1rem;
@@ -256,9 +257,132 @@
   </div>
 
   <!-- 詳細/編集モーダル -->
-  <!-- （中略：オリジナルのまま。以下の <script> 内ロジックも元のままです） -->
+  <div id="detailModal" class="fixed inset-0 hidden items-center justify-center modal-bg z-50">
+    <div class="bg-white dark:bg-zinc-900 w-11/12 max-w-md rounded-2xl shadow-xl p-5 space-y-4 border border-black/10 dark:border-white/10">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">食材の編集</h3>
+        <button id="modalClose" class="text-gray-500 hover:text-gray-700 dark:hover:text-zinc-200 text-xl leading-none">&times;</button>
+      </div>
+      <div class="space-y-3">
+        <img id="modalImg" class="w-full h-48 object-cover rounded-lg border border-black/10 dark:border-white/10" alt="item image"/>
+        <div>
+          <div class="text-sm text-gray-500 dark:text-zinc-400">食材名</div>
+          <div id="modalName" class="text-base font-medium"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm mb-1">消費期限</label>
+            <input id="modalExpiryInput" type="date" class="w-full border rounded-lg px-3 py-2 bg-white/80 dark:bg-zinc-900/70 border-black/10 dark:border-white/10">
+          </div>
+          <div>
+            <label class="block text-sm mb-1">個数</label>
+            <input id="modalQtyInput" type="number" min="0" max="999" class="w-full border rounded-lg px-3 py-2 bg-white/80 dark:bg-zinc-900/70 border-black/10 dark:border-white/10">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm mb-1">単位</label>
+            <select id="modalUnit" class="w-full border rounded-lg px-3 py-2 bg-white/80 dark:bg-zinc-900/70 border-black/10 dark:border-white/10"></select>
+          </div>
+          <div>
+            <label class="block text-sm mb-1">カテゴリ</label>
+            <select id="modalCategory" class="w-full border rounded-lg px-3 py-2 bg-white/80 dark:bg-zinc-900/70 border-black/10 dark:border-white/10"></select>
+          </div>
+          <div>
+            <label class="block text-sm mb-1">保管</label>
+            <select id="modalLocation" class="w-full border rounded-lg px-3 py-2 bg-white/80 dark:bg-zinc-900/70 border-black/10 dark:border-white/10"></select>
+          </div>
+        </div>
+        <div class="text-sm text-gray-500 dark:text-zinc-400">登録日</div>
+        <div id="modalCreated" class="text-base"></div>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button id="modalSave" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">保存</button>
+        <button id="modalOk"   class="px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600">閉じる</button>
+      </div>
+    </div>
+  </div>
 
-  <!-- 省略したテンプレート/モーダル/トースト等は元コードからそのまま残しています -->
+  <!-- 一括編集モーダル -->
+  <div id="bulkModal" class="fixed inset-0 hidden items-center justify-center modal-bg z-50">
+    <div class="bg-white dark:bg-zinc-900 w-11/12 max-w-md rounded-2xl shadow-xl p-5 space-y-4 border border-black/10 dark:border-white/10">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">一括編集</h3>
+        <button id="bulkClose" class="text-gray-500 text-xl leading-none">&times;</button>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm mb-1">消費期限（上書き）</label>
+          <input id="bulkExpiry" type="date" class="w-full border rounded-lg px-3 py-2 bg-white/80 dark:bg-zinc-900/70 border-black/10 dark:border-white/10">
+        </div>
+        <div>
+          <label class="block text-sm mb-1">個数（上書き）</label>
+          <input id="bulkQty" type="number" min="0" max="999" class="w-full border rounded-lg px-3 py-2 bg-white/80 dark:bg-zinc-900/70 border-black/10 dark:border-white/10">
+        </div>
+        <div>
+          <label class="block text-sm mb-1">単位</label>
+          <select id="bulkUnit" class="w-full border rounded-lg px-3 py-2 bg-white/80 dark:bg-zinc-900/70 border-black/10 dark:border-white/10"></select>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">カテゴリ</label>
+          <select id="bulkCategory" class="w-full border rounded-lg px-3 py-2 bg-white/80 dark:bg-zinc-900/70 border-black/10 dark:border-white/10"></select>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">保管</label>
+          <select id="bulkLocation" class="w-full border rounded-lg px-3 py-2 bg-white/80 dark:bg-zinc-900/70 border-black/10 dark:border-white/10"></select>
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+          <input id="bulkArchive" type="checkbox" class="w-4 h-4"><label for="bulkArchive" class="text-sm">アーカイブにする</label>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button id="bulkApply" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">適用</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Item Template（デザイン強化：card-glass クラス追加） -->
+  <template id="tplItem">
+    <div class="group border border-black/10 dark:border-white/10 rounded-2xl bg-white/80 dark:bg-zinc-900/60 shadow-soft overflow-hidden hover:shadow-xl transition card-glass">
+      <div class="relative">
+        <img class="card-img w-full h-44 object-cover cursor-pointer transition duration-300 group-hover:scale-[1.02]" />
+        <button class="btn-del absolute top-2 right-2 bg-white/95 dark:bg-zinc-800/90 hover:bg-white dark:hover:bg-zinc-800 text-red-600 rounded-full p-2 shadow" title="削除">🗑️</button>
+        <div class="absolute top-2 left-2">
+          <span class="expiry-badge inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-black/70 text-white">
+            <span class="dot w-1.5 h-1.5 rounded-full bg-white/80"></span>
+            <span class="badge-text">--</span>
+          </span>
+        </div>
+        <div class="absolute bottom-2 left-2 flex gap-1">
+          <span class="qty-badge text-[11px] px-2 py-0.5 rounded-full bg-emerald-600 text-white">x1</span>
+          <span class="chip-unit text-[11px] px-2 py-0.5 rounded-full bg-black/60 text-white">個</span>
+          <span class="chip-cat text-[11px] px-2 py-0.5 rounded-full bg-black/40 text-white"></span>
+          <span class="chip-loc text-[11px] px-2 py-0.5 rounded-full bg-black/40 text-white"></span>
+        </div>
+      </div>
+      <div class="p-3 space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="name font-semibold truncate max-w-[60%]"></h3>
+          <label class="inline-flex items-center gap-2 text-xs">
+            <input type="checkbox" class="sel w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-400" />
+            <span class="hidden sm:inline text-gray-500 dark:text-zinc-400">選択</span>
+          </label>
+        </div>
+        <div class="text-xs text-gray-500 dark:text-zinc-400 expiry"></div>
+        <div class="h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
+          <div class="progress h-1.5 rounded-full" style="width:0%; background: linear-gradient(90deg,#f59e0b,#f97316)"></div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Toast（Undo対応） -->
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] hidden">
+    <div class="rounded-xl px-4 py-2 bg-black/80 text-white shadow-soft text-sm">
+      <span id="toastMsg"></span>
+      <button id="toastUndo" class="ml-3 underline">元に戻す</button>
+    </div>
+  </div>
 
   <script>
     // ===== helpers
@@ -266,7 +390,7 @@
     const $$ = (s) => Array.from(document.querySelectorAll(s));
     const clampInt = (v, min, max) => Math.max(min, Math.min(max, parseInt(v || 0, 10) || 0));
 
-    // 主要UI参照
+    // UI Refs
     const itemsEl = $('#items'), msgEl = $('#msg'), recipesEl = $('#recipes'), aiBadge = $('#aiBadge');
     const skeleton = $('#skeleton'), masterCheck = $('#masterCheck'), selCountEl = $('#selCount'), bulkBar = $('#bulkBar');
     const searchBox = $('#searchBox'), sortSelect = $('#sortSelect'), filterSelect = $('#filterSelect');
@@ -276,9 +400,56 @@
     const btnUpload = $('#btnUpload'), btnSuggest = $('#btnSuggest'), btnRescan = $('#btnRescan'), btnTheme = $('#btnTheme');
     const toastBox = $('#toast'), toastMsg = $('#toastMsg'), toastUndo = $('#toastUndo');
 
-    // （モーダル・バルク・統計など、元の参照・関数は省略せずそのまま保持）
-    // ・・・（元の長い JS はそのまま残してください。以下の変更点のみ加筆）・・・
+    // Add form
+    const expiryInput = $('#expiry'), qtyInput = $('#qty');
 
+    // Modals
+    const modal = $('#detailModal');
+    const modalImg = $('#modalImg'), modalName = $('#modalName'), modalCreated = $('#modalCreated');
+    const modalExpiryInput = $('#modalExpiryInput'), modalQtyInput = $('#modalQtyInput');
+    const modalUnit = $('#modalUnit'), modalCategory = $('#modalCategory'), modalLocation = $('#modalLocation');
+    const modalSave = $('#modalSave'), modalOk = $('#modalOk'), modalClose = $('#modalClose');
+
+    // Bulk modal
+    const bulkModal = $('#bulkModal'), bulkClose = $('#bulkClose'), bulkApply = $('#bulkApply');
+    const bulkExpiry = $('#bulkExpiry'), bulkQty = $('#bulkQty'), bulkUnit = $('#bulkUnit'), bulkCategory = $('#bulkCategory'), bulkLocation = $('#bulkLocation'), bulkArchive = $('#bulkArchive');
+
+    // Stats
+    const statTotal = $('#statTotal'), statNear = $('#statNear'), statExpired = $('#statExpired');
+
+    // State
+    let items = [];
+    let currentEditId = null;
+    let lastDeletedIds = [];
+
+    // ===== theme
+    (function initTheme(){
+      const saved = localStorage.getItem('theme');
+      if (saved) document.documentElement.classList.toggle('dark', saved === 'dark');
+      else document.documentElement.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches);
+    })();
+    btnTheme.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    });
+
+    // ===== toast + undo
+    function showToast(msg, ids = []) {
+      toastMsg.textContent = msg;
+      lastDeletedIds = ids;
+      toastBox.classList.remove('hidden');
+      setTimeout(()=> toastBox.classList.add('hidden'), 3500);
+    }
+    toastUndo.addEventListener('click', async () => {
+      if (!lastDeletedIds.length) return;
+      try {
+        const r = await fetch('/api/undo_delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ids: lastDeletedIds }) });
+        await refresh();
+      } catch {}
+      toastBox.classList.add('hidden');
+    });
+
+    // ===== API
     async function apiMeta(){ const r = await fetch('/api/meta'); return await r.json(); }
     async function apiList(params){
       const qs = new URLSearchParams(params);
@@ -298,50 +469,416 @@
       if(!r.ok) throw new Error('upload failed');
       return await r.json();
     }
-    async function apiRescan(){ 
-      const r = await fetch('/api/seed/rescan', { method:'POST' }); 
-      if(!r.ok) throw new Error('rescan failed'); 
-      return await r.json(); 
+    async function apiDelete(id){
+      const r = await fetch('/api/items/'+id, { method:'DELETE' });
+      if(!r.ok){
+        let m = 'delete failed'; try{ const j = await r.json(); m = j.error || m; }catch{}
+        throw new Error(m);
+      }
+    }
+    async function apiBulkDelete(ids){
+      const r = await fetch('/api/items/bulk_delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ids }) });
+      if(!r.ok) throw new Error('bulk delete failed');
+      return await r.json();
+    }
+    async function apiUpdate(id, payload){
+      const r = await fetch('/api/items/'+id, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      if(!r.ok) throw new Error('update failed'); return await r.json();
+    }
+    async function apiBulkUpdate(ids, patch){
+      const r = await fetch('/api/items/bulk_update', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ids, patch }) });
+      if(!r.ok) throw new Error('bulk update failed'); return await r.json();
+    }
+    async function apiSuggest(ids, constraints={}){
+      const r = await fetch('/api/recipes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ item_ids: ids, constraints }) });
+      if(!r.ok) throw new Error('recipes failed'); return await r.json();
+    }
+    async function apiRescan(){ const r = await fetch('/api/seed/rescan', { method:'POST' }); if(!r.ok) throw new Error('rescan failed'); return await r.json(); }
+
+    // ===== query state & refresh
+    const queryState = {
+      q: '', sort: 'name', order: 'asc', filter: '', include_zero: false, include_archived: false
+    };
+    function getParams(){ return {
+      query: queryState.q,
+      sort: queryState.sort,
+      order: queryState.order,
+      filter: queryState.filter,
+      include_zero: queryState.include_zero,
+      include_archived: queryState.include_archived
+    };}
+
+    function parseSort(val){ const [s, o] = val.split('|'); return {s, o}; }
+
+    function parseDate(yMd){ const d=new Date(yMd); return isNaN(d)?null:d; }
+    function daysUntil(yMd){ const d=parseDate(yMd); if(!d)return null; const now=new Date(); return Math.ceil((d.setHours(0,0,0,0)-now.setHours(0,0,0,0))/86400000); }
+    function expiryBadge(days){
+      if(days===null) return {text:'期限不明',cls:'bg-black/70'};
+      if(days<0)      return {text:'期限切れ',cls:'bg-rose-600'};
+      if(days===0)    return {text:'本日まで',cls:'bg-amber-600'};
+      if(days<=2)     return {text:`残り${days}日`,cls:'bg-amber-500'};
+      if(days<=7)     return {text:`残り${days}日`,cls:'bg-emerald-600'};
+      return {text:`残り${days}日`,cls:'bg-emerald-500'};
+    }
+    function progressPct(createdISO, expiry){
+      if(!createdISO||!expiry) return 0;
+      const c=new Date(createdISO).getTime(), e=new Date(expiry).getTime(), n=Date.now();
+      if(isNaN(c)||isNaN(e)||e<=c) return 0;
+      return Math.min(100, Math.max(0, ((n-c)/(e-c))*100));
     }
 
-    // ===== イメージスキャン（押した時だけ取り込み）
+    // ===== stats
+    function updateStats(){
+      const total = items.length;
+      const near  = items.filter(it=>{
+        const d = it.expiry ? daysUntil(it.expiry) : null;
+        return d!==null && d>=0 && d<=2 && !it.is_archived && (it.quantity??0)>0;
+      }).length;
+      const expired = items.filter(it=>{
+        const d = it.expiry ? daysUntil(it.expiry) : null;
+        return d!==null && d<0 && !it.is_archived && (it.quantity??0)>0;
+      }).length;
+      statTotal.textContent = total;
+      statNear.textContent = near;
+      statExpired.textContent = expired;
+      // 軽い演出
+      statTotal.classList.add('animate-pop'); setTimeout(()=>statTotal.classList.remove('animate-pop'),220);
+      statNear.classList.toggle('animate-pulse', near>0);
+      statExpired.classList.toggle('animate-pulse', expired>0);
+    }
+
+    function showEmptyState(){
+      itemsEl.innerHTML = `
+        <div class="col-span-full">
+          <div class="grid place-items-center p-10 border border-dashed rounded-3xl text-center bg-white/60 dark:bg-zinc-900/50 border-black/10 dark:border-white/10">
+            <div class="text-6xl mb-2">🥬</div>
+            <p class="font-medium">まだ食材がありません</p>
+            <p class="text-sm text-gray-500 dark:text-zinc-400 mt-1">上のフォームから追加するか、イメージスキャンをお試しください</p>
+          </div>
+        </div>`;
+      recipesEl.textContent = '冷蔵庫が空です。食材を追加してください。';
+      aiBadge.classList.add('hidden');
+    }
+
+    function renderItems(){
+      skeleton.classList.add('hidden');
+      itemsEl.classList.remove('hidden');
+      itemsEl.innerHTML = '';
+
+      if(!items.length){ showEmptyState(); updateStats(); return; }
+
+      const tpl = $('#tplItem').content;
+      items.forEach((it)=>{
+        const node = tpl.cloneNode(true);
+        const card = node.firstElementChild;
+
+        const imgEl = node.querySelector('.card-img');
+        imgEl.src = it.image_url; imgEl.alt = it.name || '食材画像';
+        imgEl.addEventListener('click', ()=> openDetail(it));
+
+        node.querySelector('.name').textContent   = it.name || '(名称未設定)';
+        node.querySelector('.expiry').textContent = it.expiry ? `消費期限: ${it.expiry}` : '消費期限: ー';
+
+        // 期限バッジ
+        const d = it.expiry ? daysUntil(it.expiry) : null;
+        const badge = expiryBadge(d);
+        const badgeEl = node.querySelector('.expiry-badge');
+        badgeEl.className = `expiry-badge inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full text-white ${badge.cls}`;
+        badgeEl.querySelector('.badge-text').textContent = badge.text;
+
+        // 個数/単位/カテゴリ/保管チップ
+        const q = typeof it.quantity === 'number' ? it.quantity : 1;
+        const qtyBadge = node.querySelector('.qty-badge');
+        qtyBadge.textContent = q === 0 ? '在庫なし' : `x${q}`;
+        qtyBadge.className = `qty-badge text-[11px] px-2 py-0.5 rounded-full ${ q === 0 ? 'bg-slate-500 text-white' : 'bg-emerald-600 text-white' }`;
+        node.querySelector('.chip-unit').textContent = it.unit || '個';
+        node.querySelector('.chip-cat').textContent = it.category || '';
+        node.querySelector('.chip-loc').textContent = it.location || '';
+
+        if (q === 0 || it.is_archived) card.classList.add('opacity-70', 'grayscale'); else card.classList.remove('opacity-70','grayscale');
+
+        // 進捗バー
+        const pct = progressPct(it.created_at, it.expiry);
+        node.querySelector('.progress').style.width = pct + '%';
+
+        // 選択（data-idベース）
+        const sel = node.querySelector('.sel');
+        sel.dataset.id = it.id;
+        sel.addEventListener('change', updateSelCount);
+
+        // 単体削除
+        node.querySelector('.btn-del').addEventListener('click', async (e)=>{
+          e.stopPropagation();
+          if(!confirm(`「${it.name || 'この食材'}」を削除しますか？`)) return;
+          try{
+            await apiDelete(it.id);
+            items = items.filter(x=>x.id!==it.id);
+            renderItems(); updateSelCount();
+            showToast('削除しました', [it.id]);
+          }catch(err){ alert('削除に失敗しました: ' + err.message); }
+        });
+
+        itemsEl.appendChild(node);
+      });
+
+      if (recipesEl.textContent && recipesEl.textContent.includes('冷蔵庫が空です')) {
+        recipesEl.textContent = '';
+      }
+      updateStats();
+    }
+
+    function openDetail(it){
+      currentEditId = it.id;
+      modalImg.src = it.image_url;
+      modalName.textContent = it.name || '(名称未設定)';
+      modalCreated.textContent = it.created_at ? new Date(it.created_at).toLocaleString() : 'ー';
+      modalExpiryInput.value = it.expiry || '';
+      modalQtyInput.value = typeof it.quantity === 'number' ? it.quantity : 1;
+      modalUnit.value = it.unit || '個';
+      modalCategory.value = it.category || '';
+      modalLocation.value = it.location || '冷蔵';
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    }
+    function closeDetail(){ modal.classList.add('hidden'); modal.classList.remove('flex'); currentEditId = null; }
+
+    function getSelectedIds(){
+      return [...itemsEl.querySelectorAll('.sel')].filter(cb=>cb.checked).map(cb=>cb.dataset.id).filter(Boolean);
+    }
+    function updateSelCount(){
+      const n = getSelectedIds().length;
+      selCountEl.textContent = `${n} 件選択中`;
+      bulkBar.classList.toggle('hidden', n === 0);
+      masterCheck.indeterminate = (n > 0 && n < items.length);
+      masterCheck.checked = (n === items.length && items.length > 0);
+    }
+
+    function renderRecipes(data){
+      const fromAI = data?.source === 'ai';
+      if (fromAI) aiBadge.classList.remove('hidden'); else aiBadge.classList.add('hidden');
+
+      if (!data || !data.recipes || !data.recipes.length){
+        recipesEl.textContent = '候補が見つかりませんでした。';
+        return;
+      }
+      recipesEl.innerHTML = '';
+      data.recipes.forEach((r, idx)=>{
+        const tags = (r.tags || []).map(t=>`<span class="text-[11px] px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10">${t}</span>`).join(' ');
+        const ing  = (r.ingredients||[]).map(x=> `<span class="inline-block mb-1 px-2 py-0.5 bg-black/5 dark:bg-white/10 rounded">${x}</span>`).join(' ');
+        const steps = (r.steps||[]).map((s,i)=> `<li class="ml-1">${i+1}. ${s}</li>`).join('');
+        const meta = `
+          <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-zinc-400 mt-1">
+            ${r.time ? `<span>⏱ ${r.time}</span>` : '' }
+            ${r.servings ? `<span>🍽 ${r.servings}人分</span>` : '' }
+            ${tags ? `<span class="inline-flex gap-1">${tags}</span>` : ''}
+          </div>`;
+        const url = r.url ? `<a class="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 underline" href="${r.url}" target="_blank" rel="noopener">似たレシピを探す</a>` : '';
+        const box = document.createElement('div');
+        box.className = 'p-4 border rounded-2xl bg-white/70 dark:bg-zinc-900/50 border-black/10 dark:border-white/10 shadow-soft';
+        box.innerHTML = `
+          <div class="flex items-baseline gap-3">
+            <span class="text-sm text-gray-400">#${idx+1}</span>
+            <h3 class="font-semibold text-lg">${r.title || 'レシピ'}</h3>
+          </div>
+          ${meta}
+          <div class="mt-2 space-x-1">${ing}</div>
+          <ol class="mt-2 space-y-1 list-decimal list-inside">${steps}</ol>
+          <div class="mt-3">${url}</div>`;
+        recipesEl.appendChild(box);
+      });
+    }
+
+    async function refresh(){
+      try {
+        items = await apiList(getParams());
+      } catch {
+        items = [];
+        recipesEl.textContent = 'データ取得に失敗しました。';
+      }
+      renderItems(); updateSelCount();
+    }
+
+    // ===== init meta（セレクトに反映）
+    (async ()=>{
+      const meta = await apiMeta();
+      const fill = (sel, arr) => { sel.innerHTML = arr.map(v=> `<option value="${v}">${v||'（なし）'}</option>`).join(''); };
+      fill(unitSel, meta.units); fill(catSel, meta.categories); fill(locSel, meta.locations);
+      // モーダル＆バルク
+      const modalUnit = $('#modalUnit'), modalCategory = $('#modalCategory'), modalLocation = $('#modalLocation');
+      const bulkUnit = $('#bulkUnit'), bulkCategory = $('#bulkCategory'), bulkLocation = $('#bulkLocation');
+      fill(modalUnit, meta.units); fill(modalCategory, meta.categories); fill(modalLocation, meta.locations);
+      fill(bulkUnit, ['','(変更しない)'].concat(meta.units)); fill(bulkCategory, ['','(変更しない)'].concat(meta.categories)); fill(bulkLocation, ['','(変更しない)'].concat(meta.locations));
+      await refresh();
+    })();
+
+    // ===== events: controls
+    let searchTimer;
+    searchBox.addEventListener('input', ()=>{
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(()=>{ queryState.q = searchBox.value.trim(); refresh(); }, 250);
+    });
+    sortSelect.addEventListener('change', ()=>{
+      const {s,o} = parseSort(sortSelect.value); queryState.sort=s; queryState.order=o; refresh();
+    });
+    filterSelect.addEventListener('change', ()=>{ queryState.filter = filterSelect.value; refresh(); });
+    toggleZero.addEventListener('change', ()=>{ queryState.include_zero = toggleZero.checked; refresh(); });
+    toggleArchived.addEventListener('change', ()=>{ queryState.include_archived = toggleArchived.checked; refresh(); });
+
+    // クイックフィルタ（フィルタセレクトと同期）
+    $$('.qf').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const v = btn.dataset.filter || '';
+        filterSelect.value = v; queryState.filter = v; refresh();
+        $$('.qf').forEach(b=> b.classList.remove('ring-2','ring-amber-400/60'));
+        btn.classList.add('ring-2','ring-amber-400/60');
+      });
+    });
+
+    masterCheck.addEventListener('change', ()=>{
+      const all = [...itemsEl.querySelectorAll('.sel')];
+      all.forEach(cb => { cb.checked = masterCheck.checked; });
+      updateSelCount();
+    });
+
+    // ===== add / upload
+    function showPreview(file){
+      const url = URL.createObjectURL(file);
+      previewEl.classList.remove('hidden');
+      previewEl.innerHTML = `<div class="flex items-center gap-2">
+        <img src="${url}" alt="preview" class="w-10 h-10 object-cover rounded-md border border-black/10 dark:border-white/10">
+        <span class="truncate">${file.name}</span></div>`;
+    }
+    drop.addEventListener('click', ()=> fileInput.click());
+    drop.addEventListener('dragover', (e)=> { e.preventDefault(); drop.classList.add('dragover'); });
+    drop.addEventListener('dragleave', ()=> drop.classList.remove('dragover'));
+    drop.addEventListener('drop', (e)=>{ e.preventDefault(); drop.classList.remove('dragover'); if(e.dataTransfer.files.length){ fileInput.files = e.dataTransfer.files; showPreview(fileInput.files[0]); }});
+    fileInput.addEventListener('change', ()=> { if(fileInput.files[0]) showPreview(fileInput.files[0]); });
+
+    btnUpload.addEventListener('click', async ()=>{
+      const file = fileInput.files[0];
+      if(!file){ alert('画像ファイルを選択してください'); return; }
+      try{
+        msgEl.textContent = 'アップロード中…';
+        const item = await apiUpload({
+          expiry: expiryInput.value,
+          quantity: clampInt(qtyInput.value,0,999),
+          unit: unitSel.value, category: catSel.value, location: locSel.value,
+          file
+        });
+        items.push(item); renderItems(); updateSelCount();
+        fileInput.value = ''; previewEl.classList.add('hidden'); previewEl.innerHTML = '';
+        expiryInput.value = ''; qtyInput.value = '1';
+        msgEl.textContent = '追加しました';
+        setTimeout(()=> msgEl.textContent = '', 2000);
+      }catch{ alert('アップロードに失敗しました'); msgEl.textContent = ''; }
+    });
+
+    // ===== suggest (AI)
+    const btnOldSuggestHTML = btnSuggest.innerHTML;
+    btnSuggest.addEventListener('click', async ()=>{
+      try{
+        btnSuggest.disabled = true;
+        btnSuggest.innerHTML = `<svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".25" stroke-width="3"/><path d="M21 12a9 9 0 0 1-9 9" stroke="currentColor" stroke-width="3"/></svg> AIで献立生成中…`;
+        const data = await apiSuggest(getSelectedIds(), {/* constraints 例: max_time: 20 */});
+        if((data.ingredients||[]).length===0 && items.length===0){ recipesEl.textContent = '冷蔵庫が空です。'; aiBadge.classList.add('hidden'); }
+        else { renderRecipes(data); }
+      }catch{
+        recipesEl.textContent = 'レシピ生成に失敗しました。'; aiBadge.classList.add('hidden');
+      }finally{
+        btnSuggest.innerHTML = btnOldSuggestHTML; btnSuggest.disabled = false;
+      }
+    });
+
+    // ===== seed rescan
     const btnOldRescanHTML = btnRescan.innerHTML;
     btnRescan.addEventListener('click', async ()=>{
       try{
         btnRescan.disabled = true;
         btnRescan.innerHTML = `<svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".25" stroke-width="3"/><path d="M21 12a9 9 0 0 1-9 9" stroke="currentColor" stroke-width="3"/></svg> 実行中…`;
-        msgEl.textContent = 'images フォルダをスキャン中…';
+        msgEl.textContent = '実行中…';
         const r = await apiRescan();
-        if (r.found === 0) msgEl.textContent = 'static/images に画像がありません';
-        else msgEl.textContent = `images ${r.found}件中 ${r.added}件 取り込み`;
+        if (r.found === 0) msgEl.textContent = 'seedフォルダに画像がありません'; else msgEl.textContent = `seed ${r.found}件中 ${r.added}件 新規`;
         await refresh();
-      }catch{
-        msgEl.textContent = 'スキャンに失敗しました';
-      }finally{
-        btnRescan.innerHTML = btnOldRescanHTML; 
-        btnRescan.disabled = false; 
-        setTimeout(()=> msgEl.textContent = '', 2500);
+      }catch{ msgEl.textContent = 'スキャンに失敗しました'; }
+      finally{
+        btnRescan.innerHTML = btnOldRescanHTML; btnRescan.disabled = false; setTimeout(()=> msgEl.textContent = '', 2500);
       }
     });
 
-    // ===== 起動時はスキャンしない（変更点）
-    // ここでは単に一覧を読み込むだけ
-    (async ()=>{ 
-      const meta = await apiMeta();
-      const fill = (sel, arr) => { sel.innerHTML = arr.map(v=> `<option value="${v}">${v||'（なし）'}</option>`).join(''); };
-      const unitSel = document.querySelector('#unit'), catSel = document.querySelector('#category'), locSel = document.querySelector('#location');
-      fill(unitSel, meta.units); fill(catSel, meta.categories); fill(locSel, meta.locations);
+    // ===== detail modal
+    function openDetail(it){
+      currentEditId = it.id;
+      modalImg.src = it.image_url;
+      modalName.textContent = it.name || '(名称未設定)';
+      modalCreated.textContent = it.created_at ? new Date(it.created_at).toLocaleString() : 'ー';
+      modalExpiryInput.value = it.expiry || '';
+      modalQtyInput.value = typeof it.quantity === 'number' ? it.quantity : 1;
+      modalUnit.value = it.unit || '個';
+      modalCategory.value = it.category || '';
+      modalLocation.value = it.location || '冷蔵';
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    }
+    function closeDetail(){ modal.classList.add('hidden'); modal.classList.remove('flex'); currentEditId = null; }
+    modalClose.addEventListener('click', closeDetail); modalOk.addEventListener('click', closeDetail);
+    modal.addEventListener('click', (e)=> { if(e.target===modal) closeDetail(); });
 
-      // モーダル＆バルク側のセレクトも元コード通りに初期化（省略）
+    modalSave.addEventListener('click', async ()=>{
+      if(!currentEditId) return;
+      try{
+        await apiUpdate(currentEditId, {
+          expiry: (modalExpiryInput.value || "").trim(),
+          quantity: clampInt(modalQtyInput.value, 0, 999),
+          unit: modalUnit.value, category: modalCategory.value, location: modalLocation.value
+        });
+        await refresh(); closeDetail();
+      }catch{ alert('更新に失敗しました'); }
+    });
 
-      skeleton.classList.remove('hidden'); 
-      itemsEl.classList.add('hidden'); 
-      await refresh(); 
-    })();
+    // ===== bulk actions
+    const btnBulkDelete = $('#btnBulkDelete'), btnBulkArchive = $('#btnBulkArchive'), btnBulkZero = $('#btnBulkZero'), btnBulkEdit = $('#btnBulkEdit');
 
-    // 以降の元の JS（検索/並び替え/選択/削除/Undo/モーダル/レシピ生成など）はそのままです
+    btnBulkDelete.addEventListener('click', async ()=>{
+      const ids = getSelectedIds(); if(!ids.length) return;
+      if(!confirm(`${ids.length}件を削除しますか？`)) return;
+      try{
+        const res = await apiBulkDelete(ids);
+        showToast('削除しました', res.deleted || ids);
+        await refresh();
+      }catch(e){ alert('一括削除に失敗しました'); }
+    });
+
+    btnBulkArchive.addEventListener('click', async ()=>{
+      const ids = getSelectedIds(); if(!ids.length) return;
+      try{ await apiBulkUpdate(ids, { is_archived: true }); await refresh(); }catch{ alert('アーカイブに失敗しました'); }
+    });
+
+    btnBulkZero.addEventListener('click', async ()=>{
+      const ids = getSelectedIds(); if(!ids.length) return;
+      try{ await apiBulkUpdate(ids, { quantity: 0 }); await refresh(); }catch{ alert('在庫0に失敗しました'); }
+    });
+
+    btnBulkEdit.addEventListener('click', ()=>{
+      bulkModal.classList.remove('hidden'); bulkModal.classList.add('flex');
+    });
+    function closeBulk(){ bulkModal.classList.add('hidden'); bulkModal.classList.remove('flex'); }
+    bulkClose.addEventListener('click', closeBulk);
+    bulkModal.addEventListener('click', (e)=>{ if(e.target===bulkModal) closeBulk(); });
+    bulkApply.addEventListener('click', async ()=>{
+      const ids = getSelectedIds(); if(!ids.length) return;
+      const patch = {};
+      if (bulkExpiry.value) patch.expiry = bulkExpiry.value;
+      if (bulkQty.value)    patch.quantity = clampInt(bulkQty.value,0,999);
+      if (bulkUnit.value && bulkUnit.value !== '(変更しない)') patch.unit = bulkUnit.value;
+      if (bulkCategory.value && bulkCategory.value !== '(変更しない)') patch.category = bulkCategory.value;
+      if (bulkLocation.value && bulkLocation.value !== '(変更しない)') patch.location = bulkLocation.value;
+      if (bulkArchive.checked) patch.is_archived = true;
+      try{ await apiBulkUpdate(ids, patch); await refresh(); closeBulk(); }catch{ alert('一括編集に失敗しました'); }
+    });
+
+    // ===== start
+    (async ()=>{ skeleton.classList.remove('hidden'); itemsEl.classList.add('hidden'); await refresh(); })();
   </script>
 
+  <!-- Footer -->
   <footer class="max-w-7xl mx-auto px-6 pb-10 pt-6 text-xs text-gray-500 dark:text-zinc-400">
     <div class="border-t border-black/10 dark:border-white/10 pt-4">
       <span>🍱 フードマネージャー</span>
