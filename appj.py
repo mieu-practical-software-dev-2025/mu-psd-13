@@ -3,10 +3,12 @@ import json
 import uuid
 import base64
 import traceback
+import logging
+import sys, itertools, threading, time
 from datetime import datetime, date
 from typing import List, Dict, Tuple
 from collections import deque
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -31,6 +33,9 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(SEED_DIR,   exist_ok=True)
 os.makedirs(DATA_DIR,   exist_ok=True)
 
+DEBUG = os.getenv("DEBUG", "0") == "1"
+logging.basicConfig(level=logging.DEBUG if DEBUG else logging.WARNING, format="%(levelname)s: %(message)s")
+
 # =====================
 # LLM設定
 # =====================
@@ -38,6 +43,75 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL   = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")  # 任意に変更可
 
 app = Flask(__name__, template_folder=TEMPLATES, static_folder=STATIC_DIR)
+
+# =====================
+# 速度チューニング設定（追加）
+# =====================
+SEED_FAST = os.getenv("SEED_FAST", "0") == "1"     # 1でLLM自動命名をスキップ（ファイル名をそのまま食材名）
+MAX_WORKERS = int(os.getenv("SEED_MAX_WORKERS", str(min(32, (os.cpu_count() or 4) * 5))))  # I/O主体なので多め
+AI_CONCURRENCY = int(os.getenv("SEED_AI_CONCURRENCY", "3"))  # LLM同時呼び出し上限（レート制限回避）
+
+SESSION = requests.Session()
+SESSION.headers.update({"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"})
+AI_SEM = threading.Semaphore(AI_CONCURRENCY)
+
+def vision_autoname(image_path: str) -> str:
+    if not OPENROUTER_API_KEY or not OPENROUTER_MODEL:
+        return ""
+    # 縮小してから送る
+    try:
+        image_data_url = _img_b64_downscaled(image_path, max_side=640, jpeg_quality=80)
+    except Exception as e:
+        logging.debug(f"Downscale failed: {e}")
+        image_data_url = _image_to_data_url(image_path)  # フォールバック
+
+    messages = [
+        {"role": "system", "content": "画像から食材名を1語で推定。日本語10文字以内。ブランド/料理名は不可。"},
+        {"role": "user", "content": [
+            {"type": "text", "text": "この画像の主な食材名（日本語1語/10文字以内）を1つだけ返してください。"},
+            {"type": "image_url", "image_url": {"url": image_data_url}},
+        ]},
+    ]
+    body = {"model": OPENROUTER_MODEL, "messages": messages, "temperature": 0.2}
+
+    try:
+        with AI_SEM:  # 同時実行を抑制
+            resp = SESSION.post("https://openrouter.ai/api/v1/chat/completions", json=body, timeout=(10, 60))
+        resp.raise_for_status()
+        data = resp.json()
+        content = ""
+        if isinstance(data, dict) and data.get("choices"):
+            content = (data["choices"][0].get("message", {}) or {}).get("content", "") or ""
+        content = (content or "").splitlines()[0].strip(" 　「」[]()")
+        return content if 0 < len(content) <= 20 else ""
+    except Exception as e:
+        logging.debug(f"Vision autoname failed: {e}")
+        return ""
+
+
+class ConsoleSpinner:
+    def __init__(self, text="実行中…"):
+        self.text = text
+        self._stop = threading.Event()
+        self._thr = threading.Thread(target=self._run, daemon=True)
+
+    def _run(self):
+        for ch in itertools.cycle("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"):
+            if self._stop.is_set(): break
+            sys.stdout.write(f"\r{self.text} {ch}")
+            sys.stdout.flush()
+            time.sleep(0.09)
+        # 消して行を確定
+        sys.stdout.write("\r" + " " * (len(self.text) + 4) + "\r")
+        sys.stdout.flush()
+
+    def start(self): self._thr.start()
+    def stop(self, done_text="✔ 完了"):
+        self._stop.set()
+        self._thr.join()
+        print(done_text, flush=True)
+
+
 
 # =====================
 # 簡易DB
@@ -63,9 +137,15 @@ def save_db(items: List[Dict]):
     with open(DB_PATH, "w", encoding="utf-8") as f:
         json.dump(items, f, ensure_ascii=False, indent=2)
 
+
 # =====================
 # ユーティリティ
 # =====================
+def _fmt_dur(sec: float) -> str:
+    m, s = divmod(sec, 60.0)
+    h, m = divmod(int(m), 60)
+    return f"{h:02d}:{m:02d}:{s:06.3f}"
+
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
 
@@ -87,8 +167,7 @@ def vision_autoname(image_path: str) -> str:
     try:
         image_data_url = _image_to_data_url(image_path)
         messages = [
-            {"role": "system", "content":
-             "画像から食材名を1語で推定。日本語10文字以内。ブランド/料理名は不可。"},
+            {"role": "system", "content": "画像から食材名を1語で推定。日本語10文字以内。ブランド/料理名は不可。"},
             {"role": "user", "content": [
                 {"type": "text", "text": "この画像の主な食材名（日本語1語/10文字以内）を1つだけ返してください。"},
                 {"type": "image_url", "image_url": {"url": image_data_url}},
@@ -97,13 +176,26 @@ def vision_autoname(image_path: str) -> str:
         headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"}
         body = {"model": OPENROUTER_MODEL, "messages": messages, "temperature": 0.2}
         resp = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=body, timeout=60)
+
+        # HTTPエラーはここで例外に（下の except で静かに握りつぶす）
         resp.raise_for_status()
-        content = resp.json()["choices"][0]["message"]["content"].strip()
-        content = content.splitlines()[0].strip(" 　「」[]()")
+
+        data = resp.json()
+        # choices が無い/空でも KeyError にしない
+        content = ""
+        if isinstance(data, dict):
+            if "choices" in data and data["choices"]:
+                content = (data["choices"][0].get("message", {}) or {}).get("content", "") or ""
+            elif "error" in data:
+                # エラーは DEBUG の時だけ短くログ
+                logging.debug(f"OpenRouter error: {data.get('error')}")
+        content = (content or "").splitlines()[0].strip(" 　「」[]()")
         return content if 0 < len(content) <= 20 else ""
-    except Exception:
-        print("[Vision Autoname Error]", traceback.format_exc())
+    except Exception as e:
+        # ここでは**何も print しない**（必要なら DEBUG の時だけ短く）
+        logging.debug(f"Vision autoname failed: {e}")
         return ""
+
 
 # ===== レシピ
 def fallback_recipes(ingredients: List[str]) -> List[Dict]:
@@ -181,28 +273,31 @@ def llm_recipes(ings_with_qty: List[Dict], constraints: Dict) -> List[Dict]:
 # =====================
 # seedスキャン（期限空/数量1/追加フィールド既定）
 # =====================
-def import_seed_autoscan() -> Tuple[int, int]:
+def import_seed_autoscan(progress=None, max_workers=5) -> Tuple[int, int]:
     if not os.path.isdir(SEED_DIR):
         return 0, 0
+
     items = load_db()
     existing_urls = {it.get("image_url") for it in items}
-    found = 0
-    added = 0
-    for filename in os.listdir(SEED_DIR):
-        if not allowed_file(filename):
-            continue
-        found += 1
+    files = [f for f in os.listdir(SEED_DIR) if allowed_file(f)]
+    total = len(files)
+
+    # --- 並列で処理する関数 ---
+    def process_file(filename):
         safe = secure_filename(filename)
-        url = f"/static/seed/{safe}"
+        url = f"/static/images/{safe}"
         if url in existing_urls:
-            continue
+            return None
+
         auto_name = ""
         if OPENROUTER_API_KEY:
             try:
                 auto_name = vision_autoname(os.path.join(SEED_DIR, safe))
-            except Exception:
+            except Exception as e:
+                logging.debug(f"Vision autoname failed: {e}")
                 auto_name = ""
-        items.append({
+
+        item = {
             "id": str(uuid.uuid4()),
             "name": auto_name or os.path.splitext(filename)[0],
             "expiry": "",
@@ -213,11 +308,33 @@ def import_seed_autoscan() -> Tuple[int, int]:
             "is_archived": False,
             "image_url": url,
             "created_at": datetime.utcnow().isoformat() + "Z",
-        })
-        added += 1
+        }
+        return item
+
+    added = 0
+    processed = 0
+    ai_names = []  # AIスキャン名を一時保存
+
+    with ThreadPoolExecutor(max_workers=max_workers) as exe:
+        futures = {exe.submit(process_file, f): f for f in files}
+        for fut in as_completed(futures):
+            processed += 1
+            res = fut.result()
+            if res:
+                items.append(res)
+                added += 1
+                ai_names.append(res["name"])
+
+            # 10件ごとに進捗出力
+            if progress and processed % 10 == 0:
+                progress(processed, added, total, ai_names)
+                ai_names = []  # 表示したらクリア
+
     if added:
         save_db(items)
-    return added, found
+
+    return added, total
+
 
 # =====================
 # 検索・並び替え・フィルタ
@@ -437,30 +554,44 @@ def item_detail(item_id):
     save_db(items)
     return jsonify({"ok": True})
 
+# 置き換え：/api/items/bulk_delete の実装だけ差し替え
 @app.route("/api/items/bulk_delete", methods=["POST"])
 def bulk_delete():
-    data = request.get_json(force=True)
-    ids = set(data.get("ids", []))
+    # JSONが無い/壊れてる時に落ちないように
+    data = request.get_json(silent=True) or {}
+    ids_raw = data.get("ids", [])
+
+    # 型・中身チェック（フロントのバグや空送信をはねる）
+    if not isinstance(ids_raw, list):
+        return jsonify({"error": "ids must be an array"}), 400
+    ids = {str(x) for x in ids_raw if isinstance(x, (str, int)) and str(x).strip()}
+    if not ids:
+        return jsonify({"error": "no ids to delete"}), 400
+
     items = load_db()
     keep, removed = [], []
     for it in items:
-        if it["id"] in ids:
+        if it.get("id") in ids:
             removed.append(it)
         else:
             keep.append(it)
+
     if removed:
         push_undo([x.copy() for x in removed])
-        # 物理ファイル
+        # 物理ファイルの削除（アップロード分のみ）
         for it in removed:
-            if it.get("image_url","").startswith("/static/uploads/"):
+            url = it.get("image_url", "")
+            if isinstance(url, str) and url.startswith("/static/uploads/"):
                 try:
-                    path = os.path.join(BASE_DIR, it["image_url"].lstrip("/"))
+                    path = os.path.join(BASE_DIR, url.lstrip("/"))
                     if os.path.exists(path):
                         os.remove(path)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logging.debug(f"file remove failed: {e}")
         save_db(keep)
-    return jsonify({"deleted": [x["id"] for x in removed]})
+
+    # 何も該当しなかった場合も200で空配列を返す（フロントで正常扱いできる）
+    return jsonify({"deleted": [x["id"] for x in removed]}), 200
 
 @app.route("/api/undo_delete", methods=["POST"])
 def undo_delete():
@@ -602,19 +733,44 @@ def substitutes():
 def seed_rescan():
     try:
         added, found = import_seed_autoscan()
+        # PowerShell に実行結果を表示
+        print(f"▶ Rescan 実行: {found} 件スキャン、{added} 件追加", flush=True)
         return jsonify({"added": added, "found": found})
-    except Exception:
+    except Exception as e:
+        print("[Rescan Error]", e, flush=True)
         return jsonify({"error": "rescan failed"}), 500
+
 
 @app.route("/static/<path:filename>")
 def static_files(filename):
     return send_from_directory(STATIC_DIR, filename)
 
+# 例：seed 自動スキャンの起動時に出す
 if __name__ == "__main__":
     try:
-        added, found = import_seed_autoscan()
-        if added:
-            print(f"[Seed Autoscan] added {added} / found {found}")
+        def _progress(processed, added, total, ai_names):
+            names_str = "、".join(ai_names[:5])
+            print(f"▶ 実行中… {processed}/{total} 件処理済み・追加 {added} 件 | AI名: {names_str}", flush=True)
+
+        # ▼▼▼ 追加：開始時刻と計測開始 ▼▼▼
+        start_dt = datetime.now()
+        t0 = time.perf_counter()
+        print(f"▶ 実行開始（イメージ 自動スキャン）", flush=True)
+        # ▲▲▲ 追加ここまで ▲▲▲
+
+        added, found = import_seed_autoscan(progress=_progress, max_workers=5)
+
+        print(f"✔ 完了: {found} 件スキャン、{added} 件追加", flush=True)
+
+        # ▼▼▼ 追加：終了時刻と経過時間を出力 ▼▼▼
+        end_dt = datetime.now()
+        elapsed = time.perf_counter() - t0
+        print(f"⏱ 実行時間: {_fmt_dur(elapsed)}（約 {elapsed:.3f} 秒）", flush=True)
+        # ▲▲▲ 追加ここまで ▲▲▲
+
     except Exception:
-        print("[Seed Autoscan Error]", traceback.format_exc())
+        print("[Seed Autoscan Error]", traceback.format_exc(), flush=True)
+
+    print("▶ Flask サーバー起動中…", flush=True)
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)
+
