@@ -61,6 +61,226 @@
       opacity:.65; pointer-events:none; mix-blend:overlay;
     }
     .chip { box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
+    /* ==== Dark Cool Mode polish ==== */
+    :root {
+      --accent: #22d3ee;   /* cyan */
+      --accent-2: #a78bfa; /* violet */
+      --ring: rgba(34,211,238,.35);
+    }
+    
+
+    /* 背景にうっすらアニメーションするグラデのベール */
+    body.dark::before{
+      content:"";
+      position: fixed; inset:0; z-index:-1;
+      pointer-events:none;
+      background:
+        radial-gradient(60rem 40rem at 10% -10%, rgba(34,211,238,.10), transparent 60%),
+        radial-gradient(60rem 40rem at 110% 10%, rgba(167,139,250,.10), transparent 60%),
+        radial-gradient(30rem 20rem at 50% 120%, rgba(56,189,248,.06), transparent 60%);
+      filter: saturate(110%);
+      animation: bgFloat 18s ease-in-out infinite alternate;
+    }
+    @keyframes bgFloat {
+      0%   { transform: translateY(0) scale(1);   opacity:.9; }
+      100% { transform: translateY(-6px) scale(1.02); opacity:1; }
+    }
+
+    /* トップバーを薄いガラス化＋下線を控えめに */
+    .dark .sticky{
+      background: rgba(17,17,18,.55) !important;
+      backdrop-filter: blur(8px);
+      border-color: rgba(255,255,255,.06) !important;
+    }
+
+    /* カードのガラスと縁取りをクールに */
+    .dark .card-glass{
+      background: linear-gradient(180deg, rgba(24,24,27,.65), rgba(24,24,27,.55));
+      border: 1px solid rgba(255,255,255,.06) !important;
+      box-shadow:
+        0 10px 30px -14px rgba(0,0,0,.5),
+        0 1px 0 rgba(255,255,255,.03) inset;
+    }
+    .dark .card-glass::after{
+      background:
+        radial-gradient(140px 90px at 15% -10%, rgba(34,211,238,.18), transparent 60%),
+        radial-gradient(140px 90px at 110% 0%, rgba(167,139,250,.16), transparent 60%);
+      opacity:.75;
+    }
+
+    /* 画像は暗所でコントラストを少しだけ上げる。hoverでシャープに */
+    .dark .card-img{
+      filter: contrast(1.05) saturate(1.05) brightness(.98);
+      transition: filter .25s ease, transform .25s ease;
+    }
+    .dark .group:hover .card-img{
+      filter: contrast(1.15) saturate(1.1) brightness(1.02);
+    }
+
+    /* バッジやチップはネオン寄りに */
+    .dark .qty-badge{ 
+      box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset, 0 0 10px rgba(34,211,238,.18);
+    }
+    .dark .chip, .dark .chip-unit, .dark .chip-cat, .dark .chip-loc{
+      background: rgba(255,255,255,.06) !important;
+      border: 1px solid rgba(255,255,255,.06);
+    }
+
+    /* 期限バッジの発光を少し追加（色は既存のまま） */
+    .dark .expiry-badge{
+      box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset, 0 0 12px rgba(167,139,250,.16);
+    }
+
+    /* ボタン：hoverで淡いシアンのリング */
+    .dark .shadow-soft:hover{
+      box-shadow:
+        0 0 0 1px var(--ring),
+        0 10px 30px -12px rgba(0,0,0,.5);
+    }
+    .dark .shadow-glow{
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.06) inset,
+        0 0 28px -10px rgba(34,211,238,.35),
+        0 10px 30px -12px rgba(0,0,0,.58) !important;
+    }
+
+    /* 入力・セレクトの境界線をスッと */
+    .dark input, .dark select{
+      border-color: rgba(255,255,255,.08) !important;
+    }
+    .dark input:focus, .dark select:focus{
+      box-shadow: 0 0 0 3px rgba(34,211,238,.20);
+      border-color: rgba(34,211,238,.45) !important;
+    }
+
+    /* モーダルもクールガラス */
+    .dark .modal-bg{ background: rgba(2,6,23,.55); backdrop-filter: blur(8px); }
+    .dark #detailModal > div, .dark #bulkModal > div{
+      background: linear-gradient(180deg, rgba(17,24,39,.85), rgba(17,24,39,.75));
+      border: 1px solid rgba(255,255,255,.06);
+      box-shadow: 0 18px 50px -20px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.03) inset;
+    }
+
+    /* 空表示のボックスも統一感 */
+    .dark #items .grid > .col-span-full .border{
+      border-color: rgba(255,255,255,.06) !important;
+      background: linear-gradient(180deg, rgba(24,24,27,.55), rgba(24,24,27,.45)) !important;
+    }
+
+    /* スクロールバー（ダーク） */
+    .dark ::-webkit-scrollbar{ height:12px; width:12px; }
+    .dark ::-webkit-scrollbar-thumb{
+      background: linear-gradient(180deg, rgba(34,211,238,.35), rgba(167,139,250,.35));
+      border-radius: 999px;
+      border: 3px solid rgba(0,0,0,0);
+      background-clip: padding-box;
+    }
+    .dark ::-webkit-scrollbar-track{ background: transparent; }
+
+    /* 小さな発光ライン（下線に使う） */
+    .dm-underline{
+    position: relative;
+    }
+    .dark .dm-underline::after{
+      content:""; position:absolute; left:0; right:0; bottom:-2px; height:1px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      opacity:.6;
+    }
+    /* ===== Ultimate Cool Dark Mode ===== */
+:root{
+  --c1:#22d3ee; /* cyan */
+  --c2:#a78bfa; /* violet */
+  --ang: 0deg;
+}
+
+/* オーロラ + きらめき */
+body.dark::before{
+  content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+  background:
+    radial-gradient(60rem 40rem at 10% -10%, rgba(34,211,238,.12), transparent 60%),
+    radial-gradient(60rem 40rem at 110% 10%, rgba(167,139,250,.12), transparent 60%),
+    radial-gradient(26rem 22rem at 50% 120%, rgba(56,189,248,.08), transparent 60%);
+  animation:bgFloat 18s ease-in-out infinite alternate;
+}
+body.dark::after{
+  content:""; position:fixed; inset:-20% -10%; z-index:-3; pointer-events:none;
+  background: conic-gradient(from var(--ang),
+              rgba(34,211,238,.10), rgba(167,139,250,.10), rgba(34,211,238,.10));
+  filter: blur(40px); opacity:.55;
+}
+@keyframes bgFloat{0%{transform:translateY(0)}100%{transform:translateY(-8px)}}
+
+/* カード：ネオン境界＋グレア（.card-glass に重ねがけ用） */
+.dark .card-cool{
+  position:relative;
+  background: linear-gradient(180deg, rgba(17,24,39,.72), rgba(17,24,39,.62));
+  border:1px solid rgba(255,255,255,.06) !important;
+  backdrop-filter: blur(10px) saturate(115%);
+  box-shadow: 0 14px 38px -18px rgba(0,0,0,.75), 0 1px 0 rgba(255,255,255,.03) inset;
+  will-change: transform;
+}
+.dark .card-cool::before{
+  content:""; position:absolute; inset:-1px; border-radius:inherit; padding:1px;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation:borderHue 7s linear infinite; opacity:.75;
+}
+.dark .card-cool::after{
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background: radial-gradient(60% 40% at var(--mx,40%) var(--my,35%),
+              rgba(255,255,255,.06), transparent 60%);
+  transition: background-position .05s linear;
+}
+@keyframes borderHue{to{filter:hue-rotate(360deg)}}
+
+/* 画像のコントラスト強化 */
+.dark .card-img{ filter: contrast(1.1) saturate(1.08) brightness(1.02); }
+
+/* 進捗バーをネオン化 */
+.dark .progress{
+  background: linear-gradient(90deg, var(--c1), var(--c2)) !important;
+  box-shadow: 0 0 14px rgba(34,211,238,.25);
+}
+
+/* ボタン：ホログラフィック */
+.dark .btn-cool{
+  position:relative; overflow:hidden;
+  border:1px solid rgba(255,255,255,.08) !important;
+  background: linear-gradient(180deg, rgba(18,24,38,.85), rgba(18,24,38,.65));
+  box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset,
+              0 12px 32px -14px rgba(0,0,0,.7),
+              0 0 26px -10px rgba(34,211,238,.35);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.dark .btn-cool::after{
+  content:""; position:absolute; inset:-1px; pointer-events:none;
+  background: conic-gradient(from var(--ang), var(--c1), var(--c2), var(--c1));
+  mix-blend-mode: screen; filter: blur(18px); opacity:.65; transition:opacity .2s;
+}
+.dark .btn-cool:hover{ transform: translateY(-1px); }
+.dark .btn-cool:hover::after{ opacity:.9; }
+
+/* 見出し：グラデ文字＋ネオン下線 */
+.dark .heading-cool{
+  background: linear-gradient(90deg, var(--c1), var(--c2));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  text-shadow: 0 0 14px rgba(167,139,250,.25);
+  position:relative;
+}
+.dark .heading-cool::after{
+  content:""; position:absolute; left:0; right:0; bottom:-6px; height:1px;
+  background: linear-gradient(90deg, transparent, var(--c1), var(--c2), transparent);
+  opacity:.6;
+}
+
+/* スクロールバー */
+.dark ::-webkit-scrollbar{ width:12px; height:12px; }
+.dark ::-webkit-scrollbar-thumb{
+  background: linear-gradient(180deg, rgba(34,211,238,.45), rgba(167,139,250,.45));
+  border-radius:999px; border:3px solid transparent; background-clip: padding-box;
+}
+
   </style>
 </head>
 <body class="font-jp bg-gradient-to-b from-amber-50 to-white text-gray-900 dark:from-zinc-900 dark:to-zinc-950 dark:text-zinc-100">
@@ -72,7 +292,7 @@
         <h1 class="text-xl md:text-2xl font-bold tracking-tight">食材管理 &amp; 献立提案</h1>
       </div>
       <div class="flex items-center gap-2">
-        <button id="btnRescan" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500 text-white hover:bg-amber-600 active:scale-[.98] transition shadow-glow">
+        <button id="btnRescan" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500 text-white hover:bg-amber-600 active:scale-[.98] transition shadow-glow btn-cool">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 1 1 3 6.708" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M3 16v-4h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           <span>イメージスキャン</span>
         </button>
@@ -89,14 +309,15 @@
   <div class="relative overflow-hidden">
     <div class="absolute inset-0 pattern opacity-50 dark:opacity-40"></div>
     <div class="max-w-7xl mx-auto px-6 py-8 md:py-12 relative">
-      <div class="rounded-3xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/60 backdrop-blur shadow-soft p-6 md:p-8 card-glass">
+      <div class="rounded-3xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/60 backdrop-blur shadow-soft p-6 md:p-8 card-glass shadow-glow card-cool">
         <div class="flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-8 justify-between">
           <div>
-            <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">
-              冷蔵庫を“見える化”して、<span class="bg-gradient-to-r from-amber-500 via-rose-500 to-emerald-500 bg-clip-text text-transparent">ムダゼロのごはん計画</span>
+            <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight heading-cool">
+            冷蔵庫を“見える化”して、<span class="bg-gradient-to-r from-amber-500 via-rose-500 to-emerald-500 bg-clip-text text-transparent">ムダゼロのごはん計画</span>
             </h2>
+
             <p class="mt-2 text-sm md:text-base text-gray-600 dark:text-zinc-300">
-              期限が迫る食材を最優先に、ワンタップで献立へ。検索・並び替え・Undo・一括編集まで全部ひとまとめ。
+      
             </p>
           </div>
           <!-- Stats -->
@@ -133,7 +354,7 @@
       <div class="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
         <div class="flex gap-2 flex-1">
           <div class="relative flex-1">
-            <input id="searchBox" type="search" placeholder="食材名・カテゴリ・単位で検索"
+            <input id="searchBox" type="search" placeholder="食材名・カテゴリで検索"
                    class="w-full rounded-xl border border-black/10 dark:border-white/10 bg-white/80 dark:bg-zinc-900/70 px-10 py-2 outline-none focus:ring-2 focus:ring-amber-400/60">
             <svg class="w-4 h-4 absolute left-3 top-2.5 opacity-70" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
@@ -210,7 +431,7 @@
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M12 16V8m0 0-3 3m3-3 3 3M5 17v2h14v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             追加
           </button>
-          <button id="btnSuggest" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 active:scale-[.98] transition shadow-soft">
+          <button id="btnSuggest" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 active:scale-[.98] transition shadow-soft btn-cool">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="m3 12 6 6L21 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             選択で献立提案
           </button>
@@ -232,7 +453,7 @@
     <!-- 一覧 & 操作 -->
     <section class="space-y-4">
       <div class="flex items-center justify-between">
-        <h2 class="font-semibold text-lg md:text-xl">冷蔵庫の中身</h2>
+        <h2 class="font-semibold text-lg md:text-xl heading-cool">冷蔵庫の中身</h2>
       </div>
 
       <!-- スケルトン -->
@@ -249,7 +470,7 @@
     <!-- レシピ結果 -->
     <section class="rounded-2xl bg-white/70 dark:bg-zinc-900/60 border border-black/10 dark:border-white/10 shadow-soft p-6 space-y-4">
       <div class="flex items-center justify-between">
-        <h2 class="font-semibold text-lg md:text-xl">献立提案</h2>
+        <h2 class="font-semibold text-lg md:text-xl heading-cool">献立提案</h2>
         <span id="aiBadge" class="hidden text-xs px-2 py-1 rounded-full bg-violet-600 text-white">AI生成</span>
       </div>
       <div id="recipes" class="space-y-4 text-sm text-gray-700 dark:text-zinc-200"></div>
@@ -269,6 +490,8 @@
           <div class="text-sm text-gray-500 dark:text-zinc-400">食材名</div>
           <div id="modalName" class="text-base font-medium"></div>
         </div>
+        <div id="buyLinks" class="pt-2 border-t border-black/10 dark:border-white/10 text-sm"></div>
+
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-sm mb-1">消費期限</label>
@@ -385,6 +608,7 @@
   </div>
 
   <script>
+
     // ===== helpers
     const $  = (s) => document.querySelector(s);
     const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -433,6 +657,25 @@
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
     });
 
+    function shopLinksHTML(keyword){
+  const k = encodeURIComponent((keyword || '食材').trim());
+  const links = [
+    { name: 'Amazonフード', url: `https://www.amazon.co.jp/s?k=${k}&i=food-beverage` },
+    { name: '楽天市場',     url: `https://search.rakuten.co.jp/search/mall/${k}/` },
+    { name: 'Yahoo!ショッピング', url: `https://shopping.yahoo.co.jp/search?p=${k}` },
+    { name: 'イオン ネットスーパー', url: `https://shop.aeon.com/netsuper/search/?keyword=${k}` },
+    { name: 'Oisix', url: `https://www.oisix.com/SearchProduct.do?search=1&text=${k}` },
+  ];
+  return `
+    <div class="mt-2 flex flex-wrap gap-2">
+      ${links.map(l => `
+        <a href="${l.url}" target="_blank" rel="noopener"
+           class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm border border-black/10 dark:border-white/10 bg-white/80 dark:bg-zinc-900/70 hover:bg-black/5 dark:hover:bg-white/10 transition shadow-soft">
+          🛒 ${l.name}
+        </a>`).join('')}
+    </div>`;
+}
+
     // ===== toast + undo
     function showToast(msg, ids = []) {
       toastMsg.textContent = msg;
@@ -476,11 +719,22 @@
         throw new Error(m);
       }
     }
+    // 置き換え：apiBulkDelete だけ差し替え
     async function apiBulkDelete(ids){
-      const r = await fetch('/api/items/bulk_delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ids }) });
-      if(!r.ok) throw new Error('bulk delete failed');
-      return await r.json();
+      const r = await fetch('/api/items/bulk_delete', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ ids })
+    });
+    let j = {};
+    try { j = await r.json(); } catch {}
+    if(!r.ok){
+      const msg = (j && j.error) ? j.error : `HTTP ${r.status}`;
+      throw new Error(msg);
     }
+    return j;
+  }
+
     async function apiUpdate(id, payload){
       const r = await fetch('/api/items/'+id, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
       if(!r.ok) throw new Error('update failed'); return await r.json();
@@ -548,24 +802,30 @@
     }
 
     function showEmptyState(){
-      itemsEl.innerHTML = `
-        <div class="col-span-full">
-          <div class="grid place-items-center p-10 border border-dashed rounded-3xl text-center bg-white/60 dark:bg-zinc-900/50 border-black/10 dark:border-white/10">
-            <div class="text-6xl mb-2">🥬</div>
-            <p class="font-medium">まだ食材がありません</p>
-            <p class="text-sm text-gray-500 dark:text-zinc-400 mt-1">上のフォームから追加するか、イメージスキャンをお試しください</p>
-          </div>
-        </div>`;
-      recipesEl.textContent = '冷蔵庫が空です。食材を追加してください。';
-      aiBadge.classList.add('hidden');
-    }
+  const links = shopLinksHTML('食材');
+  itemsEl.innerHTML = `
+    <div class="col-span-full">
+      <div class="grid place-items-center p-10 border border-dashed rounded-3xl text-center bg-white/60 dark:bg-zinc-900/50 border-black/10 dark:border-white/10">
+        <div class="text-6xl mb-2">🥬</div>
+        <p class="font-medium">まだ食材がありません</p>
+        <div class="mb-3">
+          ${links}
+        </div>
+      </div>
+    </div>`;
+  recipesEl.textContent = '冷蔵庫が空です。食材を追加してください。';
+  aiBadge.classList.add('hidden');
+}
+
 
     function renderItems(){
       skeleton.classList.add('hidden');
       itemsEl.classList.remove('hidden');
       itemsEl.innerHTML = '';
+      const allZero = items.length > 0 && items.every(it => (it.quantity ?? 0) === 0);
 
-      if(!items.length){ showEmptyState(); updateStats(); return; }
+      if(!items.length || allZero){ showEmptyState(); updateStats(); return; }
+
 
       const tpl = $('#tplItem').content;
       items.forEach((it)=>{
@@ -806,17 +1066,27 @@
 
     // ===== detail modal
     function openDetail(it){
-      currentEditId = it.id;
-      modalImg.src = it.image_url;
-      modalName.textContent = it.name || '(名称未設定)';
-      modalCreated.textContent = it.created_at ? new Date(it.created_at).toLocaleString() : 'ー';
-      modalExpiryInput.value = it.expiry || '';
-      modalQtyInput.value = typeof it.quantity === 'number' ? it.quantity : 1;
-      modalUnit.value = it.unit || '個';
-      modalCategory.value = it.category || '';
-      modalLocation.value = it.location || '冷蔵';
-      modal.classList.remove('hidden'); modal.classList.add('flex');
-    }
+  currentEditId = it.id;
+  modalImg.src = it.image_url;
+  modalName.textContent = it.name || '(名称未設定)';
+  modalCreated.textContent = it.created_at ? new Date(it.created_at).toLocaleString() : 'ー';
+  modalExpiryInput.value = it.expiry || '';
+  modalQtyInput.value = typeof it.quantity === 'number' ? it.quantity : 1;
+  modalUnit.value = it.unit || '個';
+  modalCategory.value = it.category || '';
+  modalLocation.value = it.location || '冷蔵';
+
+  // ▼ ここが追加：この食材名で買えるサイトリンクを表示
+  const buyLinks = document.getElementById('buyLinks');
+  if (buyLinks) buyLinks.innerHTML = `
+    <div class="text-gray-500 dark:text-zinc-400 mb-1">この食材を買う</div>
+    ${shopLinksHTML(it.name || '食材')}
+  `;
+
+  modal.classList.remove('hidden'); 
+  modal.classList.add('flex');
+}
+
     function closeDetail(){ modal.classList.add('hidden'); modal.classList.remove('flex'); currentEditId = null; }
     modalClose.addEventListener('click', closeDetail); modalOk.addEventListener('click', closeDetail);
     modal.addEventListener('click', (e)=> { if(e.target===modal) closeDetail(); });
@@ -836,15 +1106,19 @@
     // ===== bulk actions
     const btnBulkDelete = $('#btnBulkDelete'), btnBulkArchive = $('#btnBulkArchive'), btnBulkZero = $('#btnBulkZero'), btnBulkEdit = $('#btnBulkEdit');
 
+    // 置き換え：btnBulkDelete の catch を改善
     btnBulkDelete.addEventListener('click', async ()=>{
       const ids = getSelectedIds(); if(!ids.length) return;
       if(!confirm(`${ids.length}件を削除しますか？`)) return;
-      try{
+        try{
         const res = await apiBulkDelete(ids);
         showToast('削除しました', res.deleted || ids);
         await refresh();
-      }catch(e){ alert('一括削除に失敗しました'); }
-    });
+        }catch(e){
+        alert('一括削除に失敗しました: ' + (e?.message || 'unknown error'));
+        }
+        });
+
 
     btnBulkArchive.addEventListener('click', async ()=>{
       const ids = getSelectedIds(); if(!ids.length) return;
@@ -859,6 +1133,11 @@
     btnBulkEdit.addEventListener('click', ()=>{
       bulkModal.classList.remove('hidden'); bulkModal.classList.add('flex');
     });
+    document.addEventListener('mousemove', (e)=>{
+    const ang = (e.clientX / window.innerWidth) * 360;
+    document.documentElement.style.setProperty('--ang', ang.toFixed(1)+'deg');
+    }, {passive:true});
+
     function closeBulk(){ bulkModal.classList.add('hidden'); bulkModal.classList.remove('flex'); }
     bulkClose.addEventListener('click', closeBulk);
     bulkModal.addEventListener('click', (e)=>{ if(e.target===bulkModal) closeBulk(); });
@@ -872,6 +1151,28 @@
       if (bulkLocation.value && bulkLocation.value !== '(変更しない)') patch.location = bulkLocation.value;
       if (bulkArchive.checked) patch.is_archived = true;
       try{ await apiBulkUpdate(ids, patch); await refresh(); closeBulk(); }catch{ alert('一括編集に失敗しました'); }
+      function attachTilt(selector, max=8){
+      document.querySelectorAll(selector).forEach(el=>{
+      el.style.transformStyle = 'preserve-3d';
+      el.addEventListener('mousemove', (e)=>{
+      const r = el.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width;
+      const py = (e.clientY - r.top)  / r.height;
+      const rx = (py - .5) * -2 * max;
+      const ry = (px - .5) *  2 * max;
+      el.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+      el.style.setProperty('--mx', `${px*100}%`);
+      el.style.setProperty('--my', `${py*100}%`);
+      });
+      el.addEventListener('mouseleave', ()=>{
+      el.style.transform = 'perspective(900px) rotateX(0) rotateY(0)';
+      el.style.setProperty('--mx','40%');
+      el.style.setProperty('--my','35%');
+      });
+    });
+  }
+attachTilt('.card-glass', 6);
+
     });
 
     // ===== start
